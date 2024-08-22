@@ -70,20 +70,32 @@ class searches_(StatesGroup):
     search_start = State()
 
 
+
+
+def datetime_end():
+    date_ = datetime.datetime.now()
+    start_ = datetime.datetime.strptime('8:00', '%H:%M').time()
+    end_ = datetime.datetime.strptime('22:00', '%H:%M').time()
+
+    return start_ <= date_.time() <= end_
+
 @dp.message_handler(text='Открыть Набор', state=None,)
 async def statex(msg: types.Message, state: FSMContext):
-    async with aiosqlite.connect('teg.db') as tc:
-        async with tc.execute('SELECT time_delete FROM users WHERE user_id = ?', (msg.from_user.id,)) as f:
-            s = await f.fetchone()
-    try:
-        if s[0] == '0' or s[0] is None:
-            await msg.answer('У вас нет подписки')
-        else:
-            await cases.cases_.set()
+    if datetime_end():
+        async with aiosqlite.connect('teg.db') as tc:
+            async with tc.execute('SELECT time_delete FROM users WHERE user_id = ?', (msg.from_user.id,)) as f:
+                s = await f.fetchone()
+        try:
+            if s[0] == '0' or s[0] is None:
+                await msg.answer('У вас нет подписки')
+            else:
+                await cases.cases_.set()
         
-            await msg.answer('Для Открытия набора выберите следующие данные:\n 1. Выберите тип', reply_markup=casses_())
-    except:
-        await state.finish()
+                await msg.answer('Для Открытия набора выберите следующие данные:\n 1. Выберите тип', reply_markup=casses_())
+        except:
+            await state.finish()
+    else:
+        await msg.answer('Время наборов с 8:00 до 22:00 по МСК, не забывай 😊')
         
         
     
@@ -160,10 +172,6 @@ async def state_(msg: types.Message, state: FSMContext):
 
 @dp.message_handler(text='Мои Наборы')
 async def check_cases(msg: types.Message):
-
-
-
-
     
     async with aiosqlite.connect('teg.db') as tc:
         async with tc.execute('SELECT * FROM users WHERE user_id = ?',(msg.from_user.id,)) as f:
@@ -208,48 +216,51 @@ async def profile(msg: types.Message):
 
 
 
+
+
 @dp.callback_query_handler(text_contains='starts')
 async def sendx_(css: types.CallbackQuery):
-    try:
-        row = InlineKeyboardMarkup()
-        rows = InlineKeyboardButton(text='📝 Откликнуться', url=f'https://t.me/{css.from_user.username}') 
-        if css.data == 'starts_':
-            async with aiosqlite.connect('teg.db') as tc:
-                async with tc.execute('SELECT * FROM users WHERE user_id = ?',(css.from_user.id,)) as f:
-                    datas = await f.fetchone()
-            row.add(rows)
-            if datas[8] == '0' or datas[8] == None  or datas[8] is None:
+    if datetime_end():
+        try:
+            row = InlineKeyboardMarkup()
+            rows = InlineKeyboardButton(text='📝 Откликнуться', url=f'https://t.me/{css.from_user.username}') 
+            if css.data == 'starts_':
+                async with aiosqlite.connect('teg.db') as tc:
+                    async with tc.execute('SELECT * FROM users WHERE user_id = ?',(css.from_user.id,)) as f:
+                        datas = await f.fetchone()
+                row.add(rows)
+                if datas[8] == '0' or datas[8] == None  or datas[8] is None:
             
-                await css.message.delete()
-            else:
-                s = await bot.send_message(chat_id=-1001791109996, text=f' * 📈 {datas[1]}\n 👩‍🔧 Нужно людей - {datas[4]} \n 💴 Оплата - {datas[2]} \n 🏷 Описание : {datas[3]} \n ✉️ Писать - @{css.from_user.username}*', parse_mode='Markdown', reply_markup=row)
+                    await css.message.delete()
+                else:
+                    s = await bot.send_message(chat_id=-1001791109996, text=f' * 📈 {datas[1]}\n 👩‍🔧 Нужно людей - {datas[4]} \n 💴 Оплата - {datas[2]} \n 🏷 Описание : {datas[3]} \n ✉️ Писать - @{css.from_user.username}*', parse_mode='Markdown', reply_markup=row)
             
-            #s_ = await bot.send_message(chat_id='@fludilkaotzivnichka', text=f' 📈 {datas[1]}\n 👩‍🔧 Нужно людей - {datas[4]} \n 💴 Оплата - {datas[2]} \n 🏷 Описание : {datas[3]} \n ✉️ Писать - @{css.from_user.username}')
+                
+                #s_ = await bot.send_message(chat_id='@fludilkaotzivnichka', text=f' 📈 {datas[1]}\n 👩‍🔧 Нужно людей - {datas[4]} \n 💴 Оплата - {datas[2]} \n 🏷 Описание : {datas[3]} \n ✉️ Писать - @{css.from_user.username}')
             
-
-
-
-            async with aiosqlite.connect('teg.db') as tc:
-                await tc.execute('UPDATE iff SET sends = ? WHERE user_id = ?', (s.message_id, css.from_user.id,))
-                await tc.commit()
-            await css.answer('Ваш набор открылся ☑️', show_alert=True)
-        elif css.data == 'starts%':
-            async with aiosqlite.connect('teg.db') as tc:
-                async with tc.execute('SELECT * FROM iff WHERE user_id = ?', (css.from_user.id,)) as f_:
-                    sends = await f_.fetchall()
-            for i in sends:
-                await bot.edit_message_text(text=f'🔒 Набор закрыт, ожидайте следующие задания ❗️',chat_id=-1001791109996, message_id=i[1])
-                #await bot.delete_message(chat_id='@fludilkaotzivnichka', message_id=i[2])
-            async with aiosqlite.connect('teg.db') as tc:
-                await tc.execute('UPDATE users SET cases_ = ?, price = ?, zametka = ?, usersc = ? WHERE user_id = ?',(None, None, None, None, css.from_user.id,))
-                await tc.commit()
-            await css.answer('Удалено')
-                #await bot.send_message(chat_id=-1001791109996, text=f'🔒 Набор от @{css.from_user.username} Был закрыт!')
-        elif css.data == 'starts-':
-            await bot.send_message(css.from_user.id, text='Главное Меню', reply_markup=wel())
-    except Exception as e:
-        print(e)
-        pass
+                async with aiosqlite.connect('teg.db') as tc:
+                    await tc.execute('UPDATE iff SET sends = ? WHERE user_id = ?', (s.message_id, css.from_user.id,))
+                    await tc.commit()
+                await css.answer('Ваш набор открылся ☑️', show_alert=True)
+            elif css.data == 'starts%':
+                async with aiosqlite.connect('teg.db') as tc:
+                    async with tc.execute('SELECT * FROM iff WHERE user_id = ?', (css.from_user.id,)) as f_:
+                        sends = await f_.fetchall()
+                for i in sends:
+                    await bot.edit_message_text(text=f'🔒 Набор закрыт, ожидайте следующие задания ❗️',chat_id=-1001791109996, message_id=i[1], reply_markup=urlsr_())
+                    #await bot.delete_message(chat_id='@fludilkaotzivnichka', message_id=i[2])
+                async with aiosqlite.connect('teg.db') as tc:
+                    await tc.execute('UPDATE users SET cases_ = ?, price = ?, zametka = ?, usersc = ? WHERE user_id = ?',(None, None, None, None, css.from_user.id,))
+                    await tc.commit()
+                await css.answer('Удалено')
+                    #await bot.send_message(chat_id=-1001791109996, text=f'🔒 Набор от @{css.from_user.username} Был закрыт!')
+            elif css.data == 'starts-':
+                await bot.send_message(css.from_user.id, text='Главное Меню', reply_markup=wel())
+        except Exception as e:
+            print(e)
+            pass
+    else:
+        await css.message.answer('Время наборов с 8:00 до 22:00 по МСК, не забывай 😊')
 
 
 

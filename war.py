@@ -12,8 +12,8 @@ import sqlite3
 
 
 
-#token = '5984947658:AAFEJNgy0rXV8FxfVRsV7uvcgS8Co1Mi24w'
-token = '6093970106:AAFugNzYa1SL0WTgReF4gHznIwqAF6tSRSY'
+token = '5984947658:AAFEJNgy0rXV8FxfVRsV7uvcgS8Co1Mi24w'
+#token = '6093970106:AAFugNzYa1SL0WTgReF4gHznIwqAF6tSRSY'
 bot_5 = Bot(token=token)
 dp = Dispatcher(bot=bot_5)
 
@@ -79,7 +79,7 @@ async def warxd_(msg: types.Message):
 
 @dp.message_handler(commands=['card'])
 async def cardxd_(msg: types.Message):
-    await msg.answer('_Реквизиты Отзывничка_ : \n 🏦 АльфаБанк\n💳 2200150236389786 \n \n 🏦 Сбербанк \n💳 2202206884471868 \n \n 📲 +79106265792 (Для переводов по номеру, актуальны только те банки, которые указаны выше ☝️ \n \n🤖 💳Савушкин С.В.', parse_mode='Markdown')
+    await msg.answer('_Реквизиты Кайфа_ : \n 🏦 АльфаБанк\n💳 2200150236389786 \n \n 🏦 Сбербанк \n💳 2202206884471868 \n \n 📲 +79106265792 (Для переводов по номеру, актуальны только те банки, которые указаны выше ☝️ \n \n🤖 💳Савушкин С.В.', parse_mode='Markdown')
 
 
 
