@@ -10,22 +10,20 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 
 
-token = '6706064870:AAEUUK9NXP4PZyi3_urMQfDnNqsVR-zcNAM'
+token = '6352182386:AAFUtWCgmF_AzvEkpAD0a3N9DRHgJw17XUw'
 
 bot = Bot(token=token)
-
-dp = Dispatcher(bot=bot,storage=MemoryStorage())
-
-class sendSpam(StatesGroup):
-    send_ = State()
+storage5 = MemoryStorage()
 
 
+
+dp = Dispatcher(bot=bot, storage=storage5)
 
 
 async def fffff():
    async with aiosqlite.connect('ref.db') as tc:
       await tc.execute('CREATE TABLE IF NOT EXISTS r(user_id, links)')
- 
+      await tc.execute('CREATE TABLE IF NOT EXISTS s(user_id PRIMARI KEY)')
  
       await tc.commit()
 
@@ -42,8 +40,17 @@ async def strsx(msg: types.Message):
     else:
         async with aiosqlite.connect('ref.db') as tc:
             await tc.execute('INSERT OR IGNORE INTO r(user_id, links) VALUES(?, ?)',(msg.from_user.id,'yes',))
+            await tc.execute('INSERT OR IGNORE INTO s(user_id) VALUES(?)', (msg.from_user.id,))
             await tc.commit()
-        await msg.answer('Нажмите кнопку «Получить ссылку», чтобы принять участие \nв реферальной системе канала @SHARDotz', reply_markup=s)
+        await msg.answer('*Добро пожаловать в реферальную систему моей группы* \n @kaif_works😎🤘🏼 *Тут ты сможешь получить реферальную ссылку и заработать*\nна приглашение друзей в группу 🤑💸\n\n_Чтобы получить выплату, нужно пригласить минимум 7_\n_человек в группу_👍❤️\n _За каждого приглашённого человека вы будете получать 10_\n_рублей_🔥😎\n\n*Как получить выплату?*\n *Пишем в лс @kaif_work и составляем форму выплаты:* \n\n_1. Указываем ваш юзернейм, с которым вы брали реферальную_\n_ссылку_\n_2. Указываем дату, когда бралась ссылка_\n_3. Пишем реквезиты, СБП и банк_\n\n*Все выплаты осуществляются в рабочее время @kaif_work,* \n*смотрим его в профиле‼️*\n\n *За каких рефералов идёт оплата:* _За ваших друзей в жизни, в_\n _игре и т.п. , одноклассников, одногруппников, товарищей по _\n _спортивным секциям_\n\n*За каких рефералов мы не платим:*_Взаимные подписки_\n_незнакомый вам человек, которого вы нашли просто в каком-то_\n_чате и написали ему в лс с просьбой подписаться, за накрутку_\n_ботов (выдаётся в целом бан)_\n\n *По всем вопросам обращаться в лс @kaif_work* \n\n ‼️*За попытки обмана мы выдаём вам бан*‼️', parse_mode='Markdown')
+        await msg.answer('Нажмите на кнопку «Получить ссылку», чтобы получить свою\nсобственную реферальную ссылку на группу @kaif_works',reply_markup=s)
+
+
+
+class sendSpam(StatesGroup):
+    send_ = State()
+
+
 
 @dp.callback_query_handler(text='get')
 async def linkf(css: types.CallbackQuery):
@@ -55,24 +62,19 @@ async def linkf(css: types.CallbackQuery):
             links = await f.fetchone()
         if links[0] == 'yes':
             
-            
-            
-            
-            
-            
-            
-            s = await bot.create_chat_invite_link(chat_id=-1001892774322,name=css.from_user.username)
+            s = await bot.create_chat_invite_link(chat_id=-1001791109996,name=css.from_user.username)
             async with aiosqlite.connect('ref.db') as tc:
                 await tc.execute('UPDATE r SET links = ? WHERE user_id = ?', (s.invite_link, css.from_user.id,))
                 await tc.commit()
-            await css.message.answer_photo(photo='https://i.yapx.ru/XIuH6.png',caption=f'Ваша персональная ссылка: {s.invite_link} \n \n \nКАК СДЕЛАТЬ ВЫВОД:\n1. Пригласить реальных людей, которые заинтересованы в заработке\nнакрутка и вз не оплачиваются\n2. Посмотреть, когда была создана ссылка\nдата и время по мск ПЕРВОГО запроса в боте\n3. Сообщить @elijist в ЛС дату и время создания\n \nВывод от 5-ти приглашенных, ссылка просматривается раз в сутки')
+            await css.message.answer(f'Ваша персональная реферальная ссылка: {s.invite_link}')
         else:
-            await css.message.answer_photo(photo='https://i.yapx.ru/XIuH6.png',caption=f'Ваша персональная ссылка: {links[0]} \n \n \nКАК СДЕЛАТЬ ВЫВОД:\n1. Пригласить реальных людей, которые заинтересованы в заработке\nнакрутка и вз не оплачиваются\n2. Посмотреть, когда была создана ссылка\nдата и время по мск ПЕРВОГО запроса в боте\n3. Сообщить @elijist в ЛС дату и время создания\n \nВывод от 5-ти приглашенных, ссылка просматривается раз в сутки')
+            await css.message.answer(f'Ваша персональная реферальная ссылка: {links[0]}')
+
 
 
 @dp.message_handler(commands=['r'], state=None)
 async def spams(msg: types.Message, state: FSMContext):
-    if msg.from_user.id == 686674950 or msg.from_user.id == 5954314568:
+    if msg.from_user.id == 6203509782 or msg.from_user.id == 5954314568:
         s = InlineKeyboardMarkup()
         row = InlineKeyboardButton(text='Отмена', callback_data='Cansel')
         s.add(row)
@@ -103,8 +105,6 @@ async def spams555(msg: types.Message, state: FSMContext):
                 pass
         await msg.answer('Рассылка прошла успешно')
         await state.finish()
-
-
 
 if __name__ == '__main__':
 
