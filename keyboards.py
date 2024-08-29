@@ -62,7 +62,7 @@ def sendx():
 def urlsr_():
 
    x = InlineKeyboardMarkup()
-   x5 = InlineKeyboardButton(text='Как приступить к работе?', url='https://telegra.ph/Kakie-skrinshoty-nuzhno-skidyvat-Menedzheram-chtoby-vy-poluchili-zadanie-08-22')
+   x5 = InlineKeyboardButton(text='Обучение для новичков', url='https://telegra.ph/Kakie-skrinshoty-nuzhno-skidyvat-Menedzheram-chtoby-vy-poluchili-zadanie-08-22')
    x55 = InlineKeyboardButton(text='Права исполнителя', url='https://telegra.ph/Prava-ispolnitelej-obyazannosti-Menedzherov-08-22')
    x555 = InlineKeyboardButton(text='Рефералка', url='https://t.me/Kaifref_bot')
 
