@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher, Router, types
 from aiogram.filters import CommandStart, Command, StateFilter
 import aiosqlite
 from keyboards import *
-from vpn import set_client
+from vpn import *
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
@@ -89,7 +89,7 @@ async def delete_vpn(clientid):
 dp = Dispatcher()
 router = Router()
 
-bot = Bot(token='7420265405:AAEojcS8CRjT5sRqlgrqTsSdsWToUptnNzc')
+bot = Bot(token='5162602636:AAHtUb-m25lZ18_fGdomamEo9XZekfASi8c')
 dp.include_router(router=router)
 
 
@@ -136,16 +136,16 @@ async def vpn_state(css: types.CallbackQuery):
         vpn_url = rands[1]
         get_stat = await get_user_stat(css.from_user.id)
         get_vpn = await get_user_vpn(css.from_user.id)
-        if get_stat != 0 and get_vpn == 0:
-            if set_client(userid=css.from_user.id, username=css.from_user.username,clientid=vpn_clintid):
-                await css.message.answer(f'Ваша ссылка : \n `{vpn_url}`', parse_mode='Markdown')
-                await upt_user_vpn(userid=css.from_user.id, vpn=vpn_url)
-                await delete_vpn(clientid=vpn_clintid)
+        if get_stat != 0 and get_vpn == 0:   
+            await css.message.answer(f'Ваша ссылка : \n `{vpn_url}`', parse_mode='Markdown')
+            await upt_user_vpn(userid=css.from_user.id, vpn=vpn_url)
+            await delete_vpn(clientid=vpn_clintid)
         elif get_vpn != 0:
             await css.message.answer(text=f'Ваша ссылка : \n `{send_vpn}`', parse_mode='Markdown')
         else:
             await css.message.answer('У вас нет подписки', reply_markup=oplata_infos())
-    except:
+    except Exception as e:
+        print(e)
         await css.message.answer('Список VPN пуст пожалуйста обратитесь в поддержку')
 
 
@@ -175,6 +175,7 @@ async def s555666(css: types.CallbackQuery):
 async def s666555(css: types.CallbackQuery):
     s = css.data.split('_')
     await css.answer()
+    await css.message.delete()
     await css.message.answer('Спасибо подождите')
     await bot.send_message(chat_id=-1002214194022,text=f'Пользователь `{s[1]}`, Оптлатил заказ {s[2]}', reply_markup=accept(userid=s[1],rands=s[2],), parse_mode='Markdown')
 
@@ -198,7 +199,8 @@ class addSer(StatesGroup):
     nickname_ = State()
     vpn_ = State()
 
-
+class spam_(StatesGroup):
+    spams = State()
 
 @dp.message(Command('admin'))
 async def admins(msg: types.Message):
@@ -206,7 +208,9 @@ async def admins(msg: types.Message):
         await msg.answer('Админка', reply_markup=admins_key())
 
 
-    
+
+
+
 @router.callback_query(StateFilter(None), F.data == ('add_vpn'))
 async def add_uder(css: types.CallbackQuery, state: FSMContext):
     if css.from_user.id == 1624519308 or css.from_user.id == 6203509782:
@@ -230,7 +234,7 @@ async def vpn___(msg: types.Message, state: FSMContext):
     try:
         data = await state.get_data()
         if 'vless' in msg.text:
-            await insert_vpn(url=msg.text,names=data['nickname_'])
+            await insert_vpn(url=msg.text,names=str(data['nickname_']))
             await msg.answer('Готово', reply_markup=admins_key())
             await state.clear()
         else:
@@ -239,6 +243,44 @@ async def vpn___(msg: types.Message, state: FSMContext):
         await state.clear()
         await bot.send_message(chat_id=1624519308, text=e)
         await msg.answer('Чтото пошло не так')
+
+@router.callback_query(F.data.startswith ('ban_'))
+async def states_5(css: types.CallbackQuery):
+    s = css.data.split('_')
+    await css.answer()
+    await bot.ban_chat_member(chat_id=s[1])
+    await css.message.answer(text=f'Пользователь - {s[1]} забанен')
+
+
+@router.callback_query(StateFilter(None), F.data == ('sender'))
+async def sends(css: types.CallbackQuery, state: FSMContext):
+    if css.from_user.id == 1624519308 or css.from_user.id == 6203509782:
+        await css.answer()
+        
+        await css.message.answer('Введите текст рассылки', reply_markup=cancel_())
+
+        await state.set_state(spam_.spams)
+
+@router.message(spam_.spams)
+async def nickname___(msg: types.Message, state: FSMContext):
+    try:
+        async with aiosqlite.connect('tet.db') as tc:
+            async with tc.execute('SELECT user_id FROM users') as f:
+                s = await f.fetchall()
+        for i in s:
+            try:
+                await bot.send_message(chat_id=i[0],text=msg.text)
+            except:
+                pass
+        await msg.answer('Рассылено')
+        await state.clear()
+
+    except Exception as e:
+        print(e)
+        await state.clear()
+        await msg.answer('Чтото пошло не так')
+
+
 
 @router.callback_query(StateFilter('*'), F.data == ('cansel'))
 async def canels(css: types.CallbackQuery, state: FSMContext):
