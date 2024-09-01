@@ -56,7 +56,7 @@ async def upt_user_vpn(userid, vpn):
 
 async def upt_user_ban(userid):
     async with aiosqlite.connect('tet.db') as tc:
-        await tc.execute('UPDATE users SET status = banned WHERE user_id = ?', (userid,))
+        await tc.execute('UPDATE users SET status = 555 WHERE user_id = ?', (userid,))
         await tc.commit()
 
 async def upt_user_unban(userid):
@@ -145,12 +145,14 @@ async def vpn_state(css: types.CallbackQuery):
         vpn_url = rands[1]
         get_stat = await get_user_stat(css.from_user.id)
         get_vpn = await get_user_vpn(css.from_user.id)
-        if get_stat != 0 and get_vpn == 0:   
+        if get_stat == 1 and get_vpn == 0:   
             await css.message.answer(f'Ваша ссылка : \n `{vpn_url}`', parse_mode='Markdown')
             await upt_user_vpn(userid=css.from_user.id, vpn=vpn_url)
             await delete_vpn(clientid=vpn_clintid)
         elif get_vpn != 0:
             await css.message.answer(text=f'Ваша ссылка : \n `{send_vpn}`', parse_mode='Markdown')
+        elif get_stat == 555:
+            await css.message.answer('Вы забанены')
         else:
             await css.message.answer('У вас нет подписки', reply_markup=oplata_infos())
     except Exception as e:
@@ -239,7 +241,7 @@ async def admins(msg: types.Message):
 async def add_5(css: types.CallbackQuery, state: FSMContext):
     await css.answer()
     s = await get_user_stat(css.from_user.id)
-    if s == 'banned':
+    if s == 555:
         await css.message.answer('Вы были забанены обратитесь в службу поддержки')
     else:
         
