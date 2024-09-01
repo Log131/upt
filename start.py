@@ -54,6 +54,12 @@ async def upt_user_vpn(userid, vpn):
         
         await tc.commit()
 
+async def upt_user_ban(userid):
+    async with aiosqlite.connect('tet.db') as tc:
+        await tc.execute('UPDATE users SET status = banned WHERE user_id = ?', (userid,))
+        await tc.commit()
+
+
 
 async def upt_user_stat(userid):
     async with aiosqlite.connect('tet.db') as tc:
@@ -158,6 +164,9 @@ async def guide(css: types.CallbackQuery):
     if s == 0:
         await css.message.answer(text=f'У вас еще нет подписки!\n\nПереведи деньги по реквизитам и нажми оплатил!\n\nСейчас акция в честь открытия ВПН, цена подписки всего 100 \n рублей на месяц!\n\nПри переводе  обязательно укажите комментарий\n`{css.from_user.id}`    (Нажми на циферки и они скопируют сами)\n\nЕсли комментария не будет, подписка не засчитается',parse_mode='Markdown')
         await css.message.answer(text='Реквизиты для перевода:\n\n🏦 Русский Стандарт Банк\n💳 5100472474930137\n\n📲 +79106265792\n\n🤖 💳 Станислав С. \n\nОПЛАТА МОЖЕТ ОСУЩЕСТВЛЯТЬСЯ НА БАНК, ЧТО Я УКАЗАЛ,\nРУССКИЙ СТАНДРТ БАНК, ЕСЛИ ВЫ ОТПРАВИЛИ ПЛАТЁЖ НЕ НА\nТОТ БАНК, ОПЛАТА БУДЕТ НЕ ДЕЙСТВИТЕЛЬНА',reply_markup=get_pay(userid=css.from_user.id,rands=rands))
+    
+    
+    
     else:
         datas_ = await get_user_date(userid=css.from_user.id)
         await css.message.answer(text=f'Ваша подписка : {datas_}')
@@ -167,6 +176,7 @@ async def guide(css: types.CallbackQuery):
 @router.callback_query(F.data == ('infos'))
 async def s555666(css: types.CallbackQuery):
     await css.answer()
+    s = await get_user_stat(css.from_user.id)
     rands = random.randrange(00000,99999)
     await css.message.answer(text=f'У вас еще нет подписки!\n\nПереведи деньги по реквизитам и нажми оплатил!\n\nСейчас акция в честь открытия ВПН, цена подписки всего 100 \n рублей на месяц!\n\nПри переводе  обязательно укажите комментарий\n`{css.from_user.id}`    (Нажми на циферки и они скопируют сами)\n\nЕсли комментария не будет, подписка не засчитается',parse_mode='Markdown')
     await css.message.answer(text='Реквизиты для перевода:\n\n🏦 Русский Стандарт Банк\n💳 5100472474930137\n\n📲 +79106265792\n\n🤖 💳 Станислав С. \n\nОПЛАТА МОЖЕТ ОСУЩЕСТВЛЯТЬСЯ НА БАНК, ЧТО Я УКАЗАЛ,\nРУССКИЙ СТАНДРТ БАНК, ЕСЛИ ВЫ ОТПРАВИЛИ ПЛАТЁЖ НЕ НА\nТОТ БАНК, ОПЛАТА БУДЕТ НЕ ДЕЙСТВИТЕЛЬНА',reply_markup=get_pay(userid=css.from_user.id,rands=rands))
@@ -225,7 +235,12 @@ async def admins(msg: types.Message):
 @router.callback_query(StateFilter(None), F.data.startswith('pay_'))
 async def add_5(css: types.CallbackQuery, state: FSMContext):
     await css.answer()
-    await css.message.answer('Напишите пожалуйста от кого перевод ?', reply_markup=cancel_())
+    s = await get_user_stat(css.from_user.id)
+    if s == 'banned':
+        await css.message.answer('Вы были забанены обратитесь в службу поддержки')
+    else:
+        
+        await css.message.answer('Напишите пожалуйста от кого перевод ?', reply_markup=cancel_())
 
 
 
@@ -280,7 +295,7 @@ async def vpn___(msg: types.Message, state: FSMContext):
 async def states_5(css: types.CallbackQuery):
     s = css.data.split('_')
     await css.answer()
-    await bot.ban_chat_member(chat_id=s[1])
+    await upt_user_ban(userid=int(s[1]))
     await css.message.answer(text=f'Пользователь - {s[1]} забанен')
 
 
