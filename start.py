@@ -89,7 +89,7 @@ async def delete_vpn(clientid):
 dp = Dispatcher()
 router = Router()
 
-bot = Bot(token='5162602636:AAHtUb-m25lZ18_fGdomamEo9XZekfASi8c')
+bot = Bot(token='7420265405:AAEojcS8CRjT5sRqlgrqTsSdsWToUptnNzc')
 dp.include_router(router=router)
 
 
