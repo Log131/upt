@@ -32,7 +32,7 @@ def admins_key():
 
 
 
-    s.add(s5,s6,s7,s9)
+    s.add(s5,s7,s9,s6)
 
     return s.adjust(1,1,1,1).as_markup()
 

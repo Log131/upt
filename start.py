@@ -171,13 +171,13 @@ async def s555666(css: types.CallbackQuery):
     await css.message.answer(text=f'У вас еще нет подписки!\n\nПереведи деньги по реквизитам и нажми оплатил!\n\nСейчас акция в честь открытия ВПН, цена подписки всего 100 \n рублей на месяц!\n\nПри переводе  обязательно укажите комментарий\n`{css.from_user.id}`    (Нажми на циферки и они скопируют сами)\n\nЕсли комментария не будет, подписка не засчитается',parse_mode='Markdown')
     await css.message.answer(text='Реквизиты для перевода:\n\n🏦 Русский Стандарт Банк\n💳 5100472474930137\n\n📲 +79106265792\n\n🤖 💳 Станислав С. \n\nОПЛАТА МОЖЕТ ОСУЩЕСТВЛЯТЬСЯ НА БАНК, ЧТО Я УКАЗАЛ,\nРУССКИЙ СТАНДРТ БАНК, ЕСЛИ ВЫ ОТПРАВИЛИ ПЛАТЁЖ НЕ НА\nТОТ БАНК, ОПЛАТА БУДЕТ НЕ ДЕЙСТВИТЕЛЬНА',reply_markup=get_pay(userid=css.from_user.id,rands=rands))
 
-@router.callback_query(F.data.startswith('pay_'))
-async def s666555(css: types.CallbackQuery):
-    s = css.data.split('_')
-    await css.answer()
-    await css.message.delete()
-    await css.message.answer('Спасибо подождите')
-    await bot.send_message(chat_id=-1002214194022,text=f'Пользователь `{s[1]}`, Оптлатил заказ {s[2]}', reply_markup=accept(userid=s[1],rands=s[2],), parse_mode='Markdown')
+#@router.callback_query(F.data.startswith('pay_'))
+#async def s666555(css: types.CallbackQuery):
+   # s = css.data.split('_')
+    #await css.answer()
+    #await css.message.delete()
+    #await css.message.answer('Спасибо подождите')
+    #await bot.send_message(chat_id=-1002214194022,text=f'Пользователь `{s[1]}`, Оптлатил заказ {s[2]}', reply_markup=accept(userid=s[1],rands=s[2],), parse_mode='Markdown')
 
 
 @router.callback_query(F.data.startswith('accept_'))
@@ -202,12 +202,44 @@ class addSer(StatesGroup):
 class spam_(StatesGroup):
     spams = State()
 
+class unbans(StatesGroup):
+    nicknames_ = State()
+
+class perevods(StatesGroup):
+    infos_ = State()
+
+
+
 @dp.message(Command('admin'))
 async def admins(msg: types.Message):
     if msg.from_user.id == 1624519308 or msg.from_user.id == 6203509782:
         await msg.answer('Админка', reply_markup=admins_key())
 
 
+
+
+
+
+
+
+@router.callback_query(StateFilter(None), F.data.startswith('pay_'))
+async def add_5(css: types.CallbackQuery, state: FSMContext):
+    await css.answer()
+    await css.message.answer('Напишите пожалуйста от кого перевод ?', reply_markup=cancel_())
+
+
+
+
+    
+    
+    await state.set_state(perevods.infos_)
+
+
+@router.message(perevods.infos_)
+async def add_6(msg: types.Message, state: FSMContext):
+    await bot.send_message(chat_id=-1002214194022,text=f'Пользователь `{msg.from_user.id}`, Оптлатил заказ \n \n от кого : {msg.text}', reply_markup=accept(userid=msg.from_user.id,rands='0',), parse_mode='Markdown')
+    await msg.answer('Спасибо подождите')
+    await state.clear()
 
 
 
@@ -252,6 +284,28 @@ async def states_5(css: types.CallbackQuery):
     await css.message.answer(text=f'Пользователь - {s[1]} забанен')
 
 
+
+@router.callback_query(StateFilter(None), F.data == ('unban'))
+async def sends_5(css: types.CallbackQuery, state: FSMContext):
+    await css.answer()
+        
+    await css.message.answer('Введите ID :', reply_markup=cancel_())
+
+    await state.set_state(unbans.nicknames_)
+
+
+
+@router.message(unbans.nicknames_)
+async def nickname___5(msg: types.Message, state: FSMContext):
+    try:
+        await bot.unban_chat_member(chat_id=int(msg.text))
+        await msg.answer('Готово')
+        await state.clear()
+    except Exception as e:
+        print(e)
+        await state.clear()
+
+
 @router.callback_query(StateFilter(None), F.data == ('sender'))
 async def sends(css: types.CallbackQuery, state: FSMContext):
     if css.from_user.id == 1624519308 or css.from_user.id == 6203509782:
@@ -260,6 +314,8 @@ async def sends(css: types.CallbackQuery, state: FSMContext):
         await css.message.answer('Введите текст рассылки', reply_markup=cancel_())
 
         await state.set_state(spam_.spams)
+
+
 
 @router.message(spam_.spams)
 async def nickname___(msg: types.Message, state: FSMContext):
