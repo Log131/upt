@@ -59,7 +59,10 @@ async def upt_user_ban(userid):
         await tc.execute('UPDATE users SET status = banned WHERE user_id = ?', (userid,))
         await tc.commit()
 
-
+async def upt_user_unban(userid):
+    async with aiosqlite.connect('tet.db') as tc:
+        await tc.execute('UPDATE users SET status = 0 WHERE user_id = ?', (userid,))
+        await tc.commit()
 
 async def upt_user_stat(userid):
     async with aiosqlite.connect('tet.db') as tc:
@@ -313,7 +316,7 @@ async def sends_5(css: types.CallbackQuery, state: FSMContext):
 @router.message(unbans.nicknames_)
 async def nickname___5(msg: types.Message, state: FSMContext):
     try:
-        await bot.unban_chat_member(chat_id=int(msg.text))
+        await upt_user_unban(userid=int(msg.text))
         await msg.answer('Готово')
         await state.clear()
     except Exception as e:
