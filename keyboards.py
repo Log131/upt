@@ -12,11 +12,11 @@ def starts_():
     
     s7 = InlineKeyboardButton(text='❗️ Как установить ?', callback_data='howto')
     s6 = InlineKeyboardButton(text='🤵🏽‍♀️ Поддержка', url='https://t.me/kaif_work')
+    s9 = InlineKeyboardButton(text='👥 Реффералы', callback_data='reffs')
     
-    
-    s.add(s0,s5,s7,s6)
+    s.add(s0,s5,s9,s7,s6)
 
-    return s.adjust(1,1,2).as_markup()
+    return s.adjust(1,1,1,2).as_markup()
 
 
 

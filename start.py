@@ -3,7 +3,7 @@ import asyncio
 from aiogram import F
 
 from aiogram import Bot, Dispatcher, Router, types
-from aiogram.filters import CommandStart, Command, StateFilter
+from aiogram.filters import CommandStart, Command, StateFilter, CommandObject
 import aiosqlite
 from keyboards import *
 from vpn import *
@@ -17,10 +17,16 @@ import datetime
 
 
 
+
+
+
+
+
 async def datas():
     async with aiosqlite.connect('tet.db') as tc:
-        await tc.execute('CREATE TABLE IF NOT EXISTS users(user_id PRIMARY KEY,status DEFAULT 0, vpn DEfAULT 0, date)')
+        await tc.execute('CREATE TABLE IF NOT EXISTS users(user_id PRIMARY KEY,status DEFAULT 0, vpn DEFAULT 0, date)')
         await tc.execute('CREATE TABLE IF NOT EXISTS vpn(names PRIMARY KEY, lists)')
+        await tc.execute('CREATE TABLE IF NOT EXISTS ref(refid PRIMARY KEY, userid, balance DEFAULT 0)')
         await tc.commit()
 
 
@@ -69,7 +75,10 @@ async def upt_user_stat(userid):
         await tc.execute('UPDATE users SET status = 1 WHERE user_id = ?', (userid,))
         await tc.commit()
 
-
+async def upt_ref_balance(userid):
+    async with aiosqlite.connect('tet.db') as tc:
+        await tc.execute('UPDATE ref SET balance = balance + 15 WHERE userid = ?', (userid,))
+        await tc.commit()
 
 async def get_user_date(userid):
     async with aiosqlite.connect('tet.db') as tc:
@@ -95,11 +104,48 @@ async def delete_vpn(clientid):
         await tc.execute('DELETE FROM vpn WHERE names = ?', (clientid,))
         await tc.commit()
 
+
+async def insert_reffs(refid,userid):
+    async with aiosqlite.connect('tet.db') as tc:
+        await tc.execute('INSERT OR IGNORE INTO ref(refid,userid) VALUES(?,?)', (refid,userid,))
+        await tc.commit()
+
+
+
+async def get_reffs_count(userid):
+    async with aiosqlite.connect('tet.db') as tc:
+        async with tc.execute('SELECT COUNT(refid) FROM ref WHERE userid = ?', (userid,)) as f:
+            s = await f.fetchall()  
+    
+    
+    
+    
+    
+    
+    return s[0]
+
+
+async def get_reffs(userid):
+    async with aiosqlite.connect('tet.db') as tc:
+        async with tc.execute('SELECT userid FROM ref WHERE refid = ?', (userid,)) as f:
+            s = await f.fetchone()
+    
+    return s[0]
+
+
+async def get_ref_balance(userid):
+    async with aiosqlite.connect('tet.db') as tc:
+        async with tc.execute('SELECT balance FROM ref WHERE userid = ?', (userid,)) as f:
+            s = await f.fetchone()
+    
+    return s[0]
+
+
 dp = Dispatcher()
 router = Router()
 
 bot = Bot(token='7420265405:AAEojcS8CRjT5sRqlgrqTsSdsWToUptnNzc')
-dp.include_router(router=router)
+dp.include_router(router=router) 
 
 
 
@@ -112,11 +158,30 @@ dp.include_router(router=router)
 
 @dp.message(CommandStart())
 async def start_(msg: types.Message):
-    async with aiosqlite.connect('tet.db') as tc:
-        await tc.execute('INSERT OR IGNORE INTO users(user_id) VALUES(?)', (msg.from_user.id,))
-        await tc.commit()
-    await msg.answer('Добро пожаловать', reply_markup=starts_())
+    invited_ref_id = msg.text.replace('/start', '').replace(' ', '')
+    if invited_ref_id and int(invited_ref_id) != msg.from_user.id:
+        await insert_reffs(refid=msg.from_user.id, userid=int(invited_ref_id))
+        async with aiosqlite.connect('tet.db') as tc:
+            await tc.execute('INSERT OR IGNORE INTO users(user_id) VALUES(?)', (msg.from_user.id,))
+            await tc.commit()
+        await msg.answer('Добро пожаловать', reply_markup=starts_())
+    else:
+        async with aiosqlite.connect('tet.db') as tc:
+            await tc.execute('INSERT OR IGNORE INTO users(user_id) VALUES(?)', (msg.from_user.id,))
+            await tc.commit()
+        await msg.answer('Добро пожаловать', reply_markup=starts_())
 
+
+
+@router.callback_query(F.data ==('reffs'))
+async def reffs_555(css: types.CallbackQuery):
+    await css.answer()
+    try:
+        count_reffs = await get_reffs_count(css.from_user.id)
+        balance_ = await get_ref_balance(css.from_user.id)
+        await css.message.answer(f'Ваш баланс : 💰{balance_} \n\n 👥Всего рефералов : {count_reffs[0]} \n\n Ваша ссылка : 🔗 https://t.me/OfficialKaifVpn_Bot?start={css.from_user.id}')
+    except:
+        await css.message.answer(f'У вас еще нет бонусов за приведённого друга. Начните\n приглашать друзей и зарабатывайте! \n\n Ваша ссылка : 🔗 https://t.me/OfficialKaifVpn_Bot?start={css.from_user.id}')
 
 
 
@@ -125,7 +190,7 @@ async def start_(msg: types.Message):
 async def hwtse(css: types.CallbackQuery):
     await css.answer()
     s = await get_user_stat(css.from_user.id)
-    if s == 0:
+    if s == 0 or s == 555:
         
         await css.message.answer('У вас нет подписки')
 
@@ -199,10 +264,27 @@ async def s555666(css: types.CallbackQuery):
 async def acc(css: types.CallbackQuery):
     await css.answer()
     s = css.data.split('_')
-    await css.message.answer(text=f'Завершено {s[1]}')
-    await upt_user_stat(userid=int(s[1]))
-    await upt_user_date(userid=int(s[1]))
-    await bot.send_message(chat_id=s[1],text='Спасибо можете пользоваться VPN')
+    try:
+        reffs = await get_reffs(userid=int(s[1]))
+
+        await upt_ref_balance(userid=int(reffs))
+        await css.message.answer(text=f'Завершено {s[1]}')
+        await upt_user_stat(userid=int(s[1]))
+        await upt_user_date(userid=int(s[1]))
+        await bot.send_message(chat_id=s[1],text='Спасибо можете пользоваться VPN\n\n Нажмите на Подключить VPN и получите ссылку /start')
+    
+        try:
+            await bot.send_message(chat_id=int(reffs), text='На ваш баланс зачислено 15 рублей за приведённого друга')
+        except:
+            pass
+    except:
+        await upt_user_stat(userid=int(s[1]))
+        await upt_user_date(userid=int(s[1]))
+        await bot.send_message(chat_id=s[1],text='Спасибо можете пользоваться VPN\n\n Нажмите на Подключить VPN и получите ссылку /start')
+
+
+
+
 
 @router.callback_query(F.data.startswith('otmenit_'))
 async def ttttt(css: types.CallbackQuery):
@@ -222,7 +304,6 @@ class unbans(StatesGroup):
 
 class perevods(StatesGroup):
     infos_ = State()
-
 
 
 @dp.message(Command('admin'))
