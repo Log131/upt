@@ -179,9 +179,9 @@ async def reffs_555(css: types.CallbackQuery):
     try:
         count_reffs = await get_reffs_count(css.from_user.id)
         balance_ = await get_ref_balance(css.from_user.id)
-        await css.message.answer(f'Ваш баланс : 💰{balance_} \n\n 👥Всего рефералов : {count_reffs[0]} \n\n Ваша ссылка : 🔗 https://t.me/OfficialKaifVpn_Bot?start={css.from_user.id}')
+        await css.message.answer(f'💰 Ваш баланс : {balance_} \n\n 👥 Всего рефералов : {count_reffs[0]} \n\n 🔗 Ваша ссылка : https://t.me/OfficialKaifVpn_Bot?start={css.from_user.id} \n \n Чтобы вывести деньги, напишите @kaif_work')
     except:
-        await css.message.answer(f'У вас еще нет бонусов за приведённого друга. Начните\n приглашать друзей и зарабатывайте! \n\n Ваша ссылка : 🔗 https://t.me/OfficialKaifVpn_Bot?start={css.from_user.id}')
+        await css.message.answer(f'У вас еще нет бонусов за приведённого друга. Начните\n приглашать друзей и зарабатывайте! \n\n 🔗 Ваша ссылка :  https://t.me/OfficialKaifVpn_Bot?start={css.from_user.id}')
 
 
 
