@@ -282,6 +282,7 @@ async def acc(css: types.CallbackQuery):
             await upt_user_date(userid=int(s[1]))
             await bot.send_message(chat_id=s[1],text='Спасибо можете пользоваться VPN\n\n Нажмите на Подключить VPN и получите ссылку /start')
     except:
+        await css.message.answer(text=f'Завершено {s[1]}')
         await upt_user_stat(userid=int(s[1]))
         await upt_user_date(userid=int(s[1]))
         await bot.send_message(chat_id=s[1],text='Спасибо можете пользоваться VPN\n\n Нажмите на Подключить VPN и получите ссылку /start')
