@@ -13,11 +13,16 @@ from aiogram.fsm.context import FSMContext
 import random
 
 import datetime
+from payments import create_payment
+from datas import *
+import re
+from aiogram.utils.markdown import hlink
 
 
 
 
 
+from aiogram.types import InputFile
 
 
 
@@ -26,133 +31,30 @@ async def datas():
     async with aiosqlite.connect('tet.db') as tc:
         await tc.execute('CREATE TABLE IF NOT EXISTS users(user_id PRIMARY KEY,status DEFAULT 0, vpn DEFAULT 0, date)')
         await tc.execute('CREATE TABLE IF NOT EXISTS vpn(names PRIMARY KEY, lists)')
+        await tc.execute('CREATE TABLE IF NOT EXISTS server(log,passw,names,sip,sinbound)')
         await tc.execute('CREATE TABLE IF NOT EXISTS ref(refid PRIMARY KEY, userid, balance DEFAULT 0)')
+        await tc.execute('CREATE TABLE IF NOT EXISTS reff(refid PRIMARY KEY, userid, balance DEFAULT 0, status DEFAULT 0)')
+        await tc.execute('CREATE TABLE IF NOT EXISTS payments(user_id PRIMARY KEY, status DEFAULT 0, url DEFAULT 0, days DEFAULT 0)')
+        await tc.commit()
+    async with aiosqlite.connect('teg.db') as tc:
+        await tc.execute('CREATE TABLE IF NOT EXISTS usersw(user_id PRIMARY KEY, sip, sinbound, log, passw)')
         await tc.commit()
 
 
 
 
-async def upt_user_date(userid):
-    time_delete = (datetime.datetime.now() + datetime.timedelta(days=int(30))).strftime('%Y-%m-%d %H:%M')
-    async with aiosqlite.connect('tet.db') as tc:
-        await tc.execute('UPDATE users SET date = ? WHERE user_id = ?', (time_delete,userid,))
-        await tc.commit()
 
-async def get_user_stat(userid):
-    async with aiosqlite.connect('tet.db') as tc:
-       async with tc.execute('SELECT status FROM users WHERE user_id = ?',(userid,)) as f:
-           s = await f.fetchone()
-    return s[0]
-
-
-
-async def get_user_vpn(userid):
-    async with aiosqlite.connect('tet.db') as tc:
-       async with tc.execute('SELECT vpn FROM users WHERE user_id = ?',(userid,)) as f:
-           s = await f.fetchone()
-    return s[0]
-
-async def upt_user_vpn(userid, vpn):
-    async with aiosqlite.connect('tet.db') as tc:
-        
-        await tc.execute('UPDATE users SET vpn = ? WHERE user_id = ?', (vpn, userid,))
-
-        
-        await tc.commit()
-
-async def upt_user_ban(userid):
-    async with aiosqlite.connect('tet.db') as tc:
-        await tc.execute('UPDATE users SET status = 555 WHERE user_id = ?', (userid,))
-        await tc.commit()
-
-async def upt_user_unban(userid):
-    async with aiosqlite.connect('tet.db') as tc:
-        await tc.execute('UPDATE users SET status = 0 WHERE user_id = ?', (userid,))
-        await tc.commit()
-
-async def upt_user_stat(userid):
-    async with aiosqlite.connect('tet.db') as tc:
-        await tc.execute('UPDATE users SET status = 1 WHERE user_id = ?', (userid,))
-        await tc.commit()
-
-async def upt_ref_balance(userid):
-    async with aiosqlite.connect('tet.db') as tc:
-        await tc.execute('UPDATE ref SET balance = balance + 15 WHERE userid = ?', (userid,))
-        await tc.commit()
-
-async def get_user_date(userid):
-    async with aiosqlite.connect('tet.db') as tc:
-        async with tc.execute('SELECT date FROM users WHERE user_id = ?', (userid,)) as f:
-            s = await f.fetchone()
-
-    return s[0]
-
-async def insert_vpn(url, names):
-    async with aiosqlite.connect('tet.db') as tc:
-        await tc.execute('INSERT OR IGNORE INTO vpn(names,lists) VALUES(?,?)', (names,url,))
-        await tc.commit()
-
-async def choose_vpn():
-    async with aiosqlite.connect('tet.db') as tc:
-        async with tc.execute('SELECT * FROM vpn') as f:
-            s = await f.fetchall()
-    
-    return s
-
-async def delete_vpn(clientid):
-    async with aiosqlite.connect('tet.db') as tc:
-        await tc.execute('DELETE FROM vpn WHERE names = ?', (clientid,))
-        await tc.commit()
-
-
-async def insert_reffs(refid,userid):
-    async with aiosqlite.connect('tet.db') as tc:
-        await tc.execute('INSERT OR IGNORE INTO ref(refid,userid) VALUES(?,?)', (refid,userid,))
-        await tc.commit()
-
-
-
-async def get_reffs_count(userid):
-    async with aiosqlite.connect('tet.db') as tc:
-        async with tc.execute('SELECT COUNT(refid) FROM ref WHERE userid = ?', (userid,)) as f:
-            s = await f.fetchall()  
-    
-    
-    
-    
-    
-    
-    return s[0]
-
-
-async def get_reffs(userid):
-    async with aiosqlite.connect('tet.db') as tc:
-        async with tc.execute('SELECT userid FROM ref WHERE refid = ?', (userid,)) as f:
-            s = await f.fetchone()
-    
-    return s[0]
-
-
-async def get_ref_balance(userid):
-    async with aiosqlite.connect('tet.db') as tc:
-        async with tc.execute('SELECT balance FROM ref WHERE userid = ?', (userid,)) as f:
-            s = await f.fetchone()
-    
-    return s[0]
 
 
 dp = Dispatcher()
 router = Router()
 
 bot = Bot(token='7420265405:AAEojcS8CRjT5sRqlgrqTsSdsWToUptnNzc')
+
 dp.include_router(router=router) 
 
-
-
-
-
-
-
+#5162602636:AAHtUb-m25lZ18_fGdomamEo9XZekfASi8c
+#7420265405:AAEojcS8CRjT5sRqlgrqTsSdsWToUptnNzc
 
 
 
@@ -163,12 +65,21 @@ async def start_(msg: types.Message):
         await insert_reffs(refid=msg.from_user.id, userid=int(invited_ref_id))
         async with aiosqlite.connect('tet.db') as tc:
             await tc.execute('INSERT OR IGNORE INTO users(user_id) VALUES(?)', (msg.from_user.id,))
+            await tc.execute('INSERT OR IGNORE INTO payments(user_id) VALUES(?)', (msg.from_user.id,))
+            await tc.commit()
+        async with aiosqlite.connect('teg.db') as tc:
+            await tc.execute('INSERT OR IGNORE INTO usersw(user_id) VALUES(?)', (msg.from_user.id,))
             await tc.commit()
         await msg.answer('Добро пожаловать', reply_markup=starts_())
     else:
         async with aiosqlite.connect('tet.db') as tc:
             await tc.execute('INSERT OR IGNORE INTO users(user_id) VALUES(?)', (msg.from_user.id,))
+            await tc.execute('INSERT OR IGNORE INTO payments(user_id) VALUES(?)', (msg.from_user.id,))
             await tc.commit()
+        async with aiosqlite.connect('teg.db') as tc:
+            await tc.execute('INSERT OR IGNORE INTO usersw(user_id) VALUES(?)', (msg.from_user.id,))
+            await tc.commit()
+
         await msg.answer('Добро пожаловать', reply_markup=starts_())
 
 
@@ -205,15 +116,20 @@ async def vpn_state(css: types.CallbackQuery):
     await css.answer()
     try:
         send_vpn = await get_user_vpn(css.from_user.id)
-        rands = random.choice(await choose_vpn())
-        vpn_clintid = rands[0]
-        vpn_url = rands[1]
+        pay_days = await get_payments_days(css.from_user.id)
         get_stat = await get_user_stat(css.from_user.id)
         get_vpn = await get_user_vpn(css.from_user.id)
         if get_stat == 1 and get_vpn == 0:   
-            await css.message.answer(f'Ваша ссылка : \n `{vpn_url}`', parse_mode='Markdown')
-            await upt_user_vpn(userid=css.from_user.id, vpn=vpn_url)
-            await delete_vpn(clientid=vpn_clintid)
+            try:
+                get_server = await set_client(userid=css.from_user.id,days=pay_days)
+                if get_server[1]:
+                    updated_text = re.sub(r'vless://.*?@', f'vless://{css.from_user.id}@', get_server[0])
+                    updated_text = re.sub(r'spx=[^&]+', f'spx=%2F#{css.from_user.id}', updated_text)
+                    await upt_user_vpn(userid=css.from_user.id,vpn=updated_text)
+                    await css.message.answer(f'Ваша ссылка : \n `{updated_text}` ', parse_mode='Markdown')
+            except Exception as e:
+                print(e)
+                await css.message.answer('Произошла ошибка свяжитесь с поддержкой')
         elif get_vpn != 0:
             await css.message.answer(text=f'Ваша ссылка : \n `{send_vpn}`', parse_mode='Markdown')
         elif get_stat == 555:
@@ -229,14 +145,10 @@ async def vpn_state(css: types.CallbackQuery):
 @dp.callback_query(F.data == ('prems'))
 async def guide(css: types.CallbackQuery):
     await css.answer()
-    rands = random.randrange(00000,99999)
     s = await get_user_stat(css.from_user.id)
     if s == 0:
-        await css.message.answer(text=f'У вас ещё нет подписки 🌐\n\nПереведите 150 рублей по реквизитам, что высланы ниже и\nпроизведи оплату. Вам будет выдана подписка на месяц 🎉\n\nОбязательно при переводе пишем, от кого сделан перевод ‼️',parse_mode='Markdown')
-        await css.message.answer(text='Реквизиты для перевода:\n\n🏦 Русский Стандарт Банк\n💳 5100472474930137\n\n📲 +79106265792\n\n🤖 💳 Станислав С. \n\nОплата может осуществляться только на банк, что указан 🏦\n\nВ случае, если вы перевели в какой-либо другой банк,\nпотребуется обратиться в поддержку 🛠\n\nУказываем, от кого был осуществлён перевод и ожидаем\nвыдачи подписки 😇',reply_markup=get_pay(userid=css.from_user.id,rands=rands))
-    
-    
-    
+        await css.message.answer(text=f'У вас еще нет подписки!', reply_markup=oplata_infos())
+        
     else:
         datas_ = await get_user_date(userid=css.from_user.id)
         await css.message.answer(text=f'Ваша подписка : {datas_}')
@@ -246,46 +158,46 @@ async def guide(css: types.CallbackQuery):
 @router.callback_query(F.data == ('infos'))
 async def s555666(css: types.CallbackQuery):
     await css.answer()
-    s = await get_user_stat(css.from_user.id)
-    rands = random.randrange(00000,99999)
-    await css.message.answer(text=f'У вас ещё нет подписки 🌐\n\nПереведите 150 рублей по реквизитам, что высланы ниже и\nпроизведи оплату. Вам будет выдана подписка на месяц 🎉\n\nОбязательно при переводе пишем, от кого сделан перевод ‼️',parse_mode='Markdown')
-    await css.message.answer(text='Реквизиты для перевода:\n\n🏦 Русский Стандарт Банк\n💳 5100472474930137\n\n📲 +79106265792\n\n🤖 💳 Станислав С. \n\nОплата может осуществляться только на банк, что указан 🏦\n\nВ случае, если вы перевели в какой-либо другой банк,\nпотребуется обратиться в поддержку 🛠\n\n\Указываем, от кого был осуществлён перевод и ожидаем\nвыдачи подписки 😇',reply_markup=get_pay(userid=css.from_user.id,rands=rands))
-
-#@router.callback_query(F.data.startswith('pay_'))
-#async def s666555(css: types.CallbackQuery):
-   # s = css.data.split('_')
-    #await css.answer()
-    #await css.message.delete()
-    #await css.message.answer('Спасибо подождите')
-    #await bot.send_message(chat_id=-1002214194022,text=f'Пользователь `{s[1]}`, Оптлатил заказ {s[2]}', reply_markup=accept(userid=s[1],rands=s[2],), parse_mode='Markdown')
+    await css.message.answer('🌐Выберите кол-во месяцев, на которое вы хотите приобрести\n KAIF VPN:',reply_markup=payment_key())
 
 
-@router.callback_query(F.data.startswith('accept_'))
-async def acc(css: types.CallbackQuery):
-    await css.answer()
+
+@router.callback_query(F.data.startswith('payment_'))
+async def payments_____(css: types.CallbackQuery):
     s = css.data.split('_')
-    try:
-        reffs = await get_reffs(userid=int(s[1]))
-        if reffs:
-            await upt_ref_balance(userid=int(reffs))
-            await css.message.answer(text=f'Завершено {s[1]}')
-            await upt_user_stat(userid=int(s[1]))
-            await upt_user_date(userid=int(s[1]))
-            await bot.send_message(chat_id=s[1],text='Спасибо можете пользоваться VPN\n\n Нажмите на Подключить VPN и получите ссылку /start')
-    
-            try:
-                await bot.send_message(chat_id=int(reffs), text='На ваш баланс зачислено 15 рублей за приведённого друга')
-            except:
-                pass
-        else:
-            await upt_user_stat(userid=int(s[1]))
-            await upt_user_date(userid=int(s[1]))
-            await bot.send_message(chat_id=s[1],text='Спасибо можете пользоваться VPN\n\n Нажмите на Подключить VPN и получите ссылку /start')
-    except:
-        await css.message.answer(text=f'Завершено {s[1]}')
-        await upt_user_stat(userid=int(s[1]))
-        await upt_user_date(userid=int(s[1]))
-        await bot.send_message(chat_id=s[1],text='Спасибо можете пользоваться VPN\n\n Нажмите на Подключить VPN и получите ссылку /start')
+    await css.answer()
+    await css.message.delete()
+    r_url = await get_payments_url(css.from_user.id)
+    if r_url == 0:
+        if str(s[1]) == '150':
+            payms = await create_payment('150')
+            await css.message.answer(f'Ваша ссылка для оплаты \n {payms[1]}')
+            await upt_pay_infos(userid=css.from_user.id,status=payms[0],url=payms[1],days=30)
+        elif str(s[1]) == '400':
+            payms = await create_payment('400')
+            await css.message.answer(f'Ваша ссылка для оплаты \n {payms[1]}')
+            await upt_pay_infos(userid=css.from_user.id,status=payms[0],url=payms[1],days=90)
+        elif str(s[1]) == '750':
+            payms = await create_payment('750')
+            await css.message.answer(f'Ваша ссылка для оплаты \n {payms[1]}')
+            await upt_pay_infos(userid=css.from_user.id,status=payms[0],url=payms[1],days=180)
+        elif str(s[1]) == '1400':
+            payms = await create_payment('1400')
+            await css.message.answer(f'Ваша ссылка для оплаты \n {payms[1]}')
+            await upt_pay_infos(userid=css.from_user.id,status=payms[0],url=payms[1],days=360)
+    else:
+        await css.message.answer(f'У вас есть незаконченная оплата Хотите отменить? \n [Тык]({r_url})',parse_mode='Markdown', reply_markup=payment_cancel())
+
+
+
+@router.callback_query(F.data == ('paycancel'))
+async def payments______5555(css: types.CallbackQuery):
+    await css.answer()
+    await css.message.delete()
+    await upt_pay_infos(userid=css.from_user.id,status=0,url=0,days=0)
+    await css.message.answer('Отменено', reply_markup=payment_key())
+
+
 
 
 
@@ -311,9 +223,87 @@ class perevods(StatesGroup):
     infos_ = State()
 
 
+class servInfo(StatesGroup):
+    country_ = State()
+    log_ = State()
+    passw_ = State()
+    sip_ = State()
+    sinbound = State()
+
+
+
+
+
+
+@router.callback_query(StateFilter(None), F.data == ('add_server'))
+async def add_server(css: types.CallbackQuery, state: FSMContext):
+    if css.from_user.id == 1624519308 or css.from_user.id == 6203509782:
+        await css.answer()
+        await css.message.answer('Введите login от сервера', reply_markup=cancel_())
+        await state.set_state(servInfo.country_)
+
+
+
+
+@router.message(servInfo.country_)
+async def add_server_6(msg: types.Message, state: FSMContext): 
+    await state.update_data(country_=msg.text)
+    await msg.answer('Введите Пароль от сервера', reply_markup=cancel_())
+
+
+    await state.set_state(servInfo.log_)
+
+@router.message(servInfo.log_)
+async def vpn___(msg: types.Message, state: FSMContext):
+    await state.update_data(passw_=msg.text)
+    await msg.answer('Введите ссылку от VPN из панели', reply_markup=cancel_())
+    await state.set_state(servInfo.passw_)
+
+
+@router.message(servInfo.passw_)
+async def add_server_8(msg: types.Message, state: FSMContext):
+    await state.update_data(sip_=msg.text)
+    if 'vless' in msg.text:
+        await msg.answer('Введите IP PORT сервера пример 0.0.0.0:65000', reply_markup=cancel_())
+        await state.set_state(servInfo.sip_)
+    else:
+        await msg.answer('Вы неправильно ввели ссылку', reply_markup=cancel_())
+
+
+@router.message(servInfo.sip_)
+async def add_server_7(msg: types.Message, state: FSMContext):
+    await state.update_data(sinbound_=msg.text)
+    try:
+        if ':' in msg.text:
+            await msg.answer('Введите ID панели клиентов пример (от 1 - 9)', reply_markup=cancel_())
+            await state.set_state(servInfo.sinbound)
+        else:
+            await msg.answer('Вы неправильно ввели ссылку', reply_markup=cancel_())
+    except Exception as e:
+        await state.clear()
+        await bot.send_message(chat_id=1624519308, text=str(e))
+        await msg.answer('Чтото пошло не так')
+
+@router.message(servInfo.sinbound)
+async def add_server_555(msg: types.Message, state: FSMContext):
+    try:
+        data = await state.get_data()
+        await insert_server_info(log=data['country_'], passw=data['passw_'],names=data['sip_'],sip=data['sinbound_'],sinbound=msg.text)
+        await msg.answer('Готово', reply_markup=admins_key())
+        await state.clear()
+    except Exception as e:
+        await state.clear()
+        await bot.send_message(chat_id=1624519308, text=str(e))
+        await msg.answer('Чтото пошло не так')
+
+
+
 @dp.message(Command('admin'))
 async def admins(msg: types.Message):
     if msg.from_user.id == 1624519308 or msg.from_user.id == 6203509782:
+        async with aiosqlite.connect('tet.db') as tc:
+            await tc.execute('UPDATE users SET status = 1 WHERE user_id = ?', (msg.from_user.id,))
+            await tc.commit()
         await msg.answer('Админка', reply_markup=admins_key())
 
 
@@ -456,6 +446,37 @@ async def s555(css: types.CallbackQuery):
     await css.answer()
     await css.message.answer('Назад', reply_markup=starts_())
 
+
+
+@router.callback_query(F.data == ('delete_server'))
+async def funcs5(css: types.CallbackQuery):
+    await css.answer()
+    s = await get_server_info()
+    
+    key = servers_key(s)
+    await css.message.answer('Просто нажми на сервер что бы удалить', reply_markup=key)
+
+@router.callback_query(F.data.startswith ('removeserver_'))
+async def funcs6(css: types.CallbackQuery):
+    s = css.data.split('_')
+    await css.answer()
+    try:
+        await delete_servers(sip=s[1])
+        s = await get_server_info()
+    
+        key = servers_key(s)
+        await css.message.answer('Просто нажми на сервер что бы удалить', reply_markup=key)
+    except Exception as e:
+        print(e)
+
+
+@router.callback_query(F.data == ('backup'))
+async def funcs7(css: types.CallbackQuery):
+    await css.answer()
+    s = InputFile('/root/vpnbot/tet.db')
+    r = InputFile('/root/vpnbot/teg.db')
+    await bot.send_document(chat_id=css.from_user.id,document=s)
+    await bot.send_document(chat_id=css.from_user.id,document=r)
 
 async def main():
     await datas()
