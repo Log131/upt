@@ -230,10 +230,27 @@ class servInfo(StatesGroup):
     sip_ = State()
     sinbound = State()
 
+class reff5(StatesGroup):
+    reff6 = State()
 
 
+@router.callback_query(StateFilter(None), F.data == ('reff0'))
+async def add_reff5(css: types.CallbackQuery, state: FSMContext):
+    if css.from_user.id == 1624519308 or css.from_user.id == 6203509782:
+        await css.answer()
+        await css.message.answer('Введите ID Пользователя', reply_markup=cancel_())
+        await state.set_state(reff5.reff6)
 
 
+@router.message(reff5.reff6)
+async def add_reff6(msg: types.Message, state: FSMContext): 
+    try:
+        await update_reff5(userid=int(msg.from_user.id))
+        await msg.answer('Готово')
+        await state.clear()
+    except:
+        await msg.answer(text='Чтото пошло не так')
+        await state.clear()
 
 @router.callback_query(StateFilter(None), F.data == ('add_server'))
 async def add_server(css: types.CallbackQuery, state: FSMContext):
@@ -473,8 +490,8 @@ async def funcs6(css: types.CallbackQuery):
 @router.callback_query(F.data == ('backup'))
 async def funcs7(css: types.CallbackQuery):
     await css.answer()
-    s = InputFile('/root/vpnbot/tet.db')
-    r = InputFile('/root/vpnbot/teg.db')
+    s = InputFile('tet.db')
+    r = InputFile('teg.db')
     await bot.send_document(chat_id=css.from_user.id,document=s)
     await bot.send_document(chat_id=css.from_user.id,document=r)
 

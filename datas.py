@@ -66,7 +66,7 @@ async def upt_user_stat(userid):
 
 async def upt_ref_balance(userid):
     async with aiosqlite.connect('tet.db') as tc:
-        await tc.execute('UPDATE reff SET balance = balance + 30 WHERE userid = ?', (userid,))
+        await tc.execute('UPDATE reff SET balance = balance + 15 WHERE userid = ?', (userid,))
         await tc.commit()
 
 async def get_user_date(userid):
@@ -157,6 +157,10 @@ async def get_payments_url(userid):
     
     return s[0]
 
+async def update_reff5(userid):
+    async with aiosqlite.connect('teg.db') as tc:
+        await tc.execute('UPDATE reff SET balance = 0 WHERE user_id = ?', (userid,))
+        await tc.commit()
 
 async def update_usersw(userid,sip,log,passw,inbound):
     async with aiosqlite.connect('teg.db') as tc:
