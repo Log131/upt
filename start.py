@@ -1,511 +1,523 @@
-import asyncio
+from aiogram import Dispatcher,Bot,executor,types
 
-from aiogram import F
+from aiogram.dispatcher.filters.state import State, StatesGroup
 
-from aiogram import Bot, Dispatcher, Router, types
-from aiogram.filters import CommandStart, Command, StateFilter, CommandObject
-import aiosqlite
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.utils.markdown import link
+from aiogram.dispatcher import FSMContext
 from keyboards import *
-from vpn import *
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.fsm.context import FSMContext
-
-import random
-
 import datetime
-from payments import create_payment
+import asyncio
 from datas import *
-import re
-from aiogram.utils.markdown import hlink
 
 
 
+token = '6816427189:AAFJWYBA8tDx1psz5nUZ1CXpZAGqcwk-XQw'
+
+bot = Bot(token=token)
+storage = MemoryStorage()
+dp = Dispatcher(bot=bot, storage=storage)
 
 
-from aiogram.types import InputFile
+@dp.message_handler(commands=['start'])
 
+async def startx(msg: types.Message):
+    
+    if msg.from_user.username is None:
+        await msg.answer(' ``` Добавьте пожалуйста никнейм в настройках ``` ', parse_mode='Markdown')
+    
+    else:
+        await state_5(userid=msg.from_user.id,username=msg.from_user.username,first_name=msg.from_user.first_name)
+        await msg.answer_photo(photo='https://i.yapx.ru/XG82q.png',caption='Добро пожаловать!\nВыберите по кнопкам ниже, чем я могу Вам помочь\n\nНаш канал: @SHARDotz\nНаши выплаты: @SHARDopl', reply_markup=wel())
+                
+            
 
-
-
-async def datas():
-    async with aiosqlite.connect('tet.db') as tc:
-        await tc.execute('CREATE TABLE IF NOT EXISTS users(user_id PRIMARY KEY,status DEFAULT 0, vpn DEFAULT 0, date)')
-        await tc.execute('CREATE TABLE IF NOT EXISTS vpn(names PRIMARY KEY, lists)')
-        await tc.execute('CREATE TABLE IF NOT EXISTS server(log,passw,names,sip,sinbound)')
-        await tc.execute('CREATE TABLE IF NOT EXISTS ref(refid PRIMARY KEY, userid, balance DEFAULT 0)')
-        await tc.execute('CREATE TABLE IF NOT EXISTS reff(refid PRIMARY KEY, userid, balance DEFAULT 0, status DEFAULT 0)')
-        await tc.execute('CREATE TABLE IF NOT EXISTS payments(user_id PRIMARY KEY, status DEFAULT 0, url DEFAULT 0, days DEFAULT 0)')
-        await tc.commit()
+@dp.message_handler(text='Наборы')
+async def nabors(msg: types.Message):
     async with aiosqlite.connect('teg.db') as tc:
-        await tc.execute('CREATE TABLE IF NOT EXISTS usersw(user_id PRIMARY KEY, sip, sinbound, log, passw)')
-        await tc.commit()
+        async with tc.execute('SELECT time_delete FROM users WHERE user_id = ?', (msg.from_user.id,)) as f:
+            s = await f.fetchone()
+        try:
+            if s[0] == '0' or s[0] is None:
 
+                await msg.answer('У вас нет подписки!')
 
-
-
-
-
-
-dp = Dispatcher()
-router = Router()
-
-bot = Bot(token='7420265405:AAEojcS8CRjT5sRqlgrqTsSdsWToUptnNzc')
-
-dp.include_router(router=router) 
-
-#5162602636:AAHtUb-m25lZ18_fGdomamEo9XZekfASi8c
-#7420265405:AAEojcS8CRjT5sRqlgrqTsSdsWToUptnNzc
-
-
-
-@dp.message(CommandStart())
-async def start_(msg: types.Message):
-    invited_ref_id = msg.text.replace('/start', '').replace(' ', '')
-    if invited_ref_id and int(invited_ref_id) != msg.from_user.id:
-        await insert_reffs(refid=msg.from_user.id, userid=int(invited_ref_id))
-        async with aiosqlite.connect('tet.db') as tc:
-            await tc.execute('INSERT OR IGNORE INTO users(user_id) VALUES(?)', (msg.from_user.id,))
-            await tc.execute('INSERT OR IGNORE INTO payments(user_id) VALUES(?)', (msg.from_user.id,))
-            await tc.commit()
-        async with aiosqlite.connect('teg.db') as tc:
-            await tc.execute('INSERT OR IGNORE INTO usersw(user_id) VALUES(?)', (msg.from_user.id,))
-            await tc.commit()
-        await msg.answer('Добро пожаловать', reply_markup=starts_())
-    else:
-        async with aiosqlite.connect('tet.db') as tc:
-            await tc.execute('INSERT OR IGNORE INTO users(user_id) VALUES(?)', (msg.from_user.id,))
-            await tc.execute('INSERT OR IGNORE INTO payments(user_id) VALUES(?)', (msg.from_user.id,))
-            await tc.commit()
-        async with aiosqlite.connect('teg.db') as tc:
-            await tc.execute('INSERT OR IGNORE INTO usersw(user_id) VALUES(?)', (msg.from_user.id,))
-            await tc.commit()
-
-        await msg.answer('Добро пожаловать', reply_markup=starts_())
-
-
-
-@router.callback_query(F.data ==('reffs'))
-async def reffs_555(css: types.CallbackQuery):
-    await css.answer()
-    try:
-        count_reffs = await get_reffs_count(css.from_user.id)
-        balance_ = await get_ref_balance(css.from_user.id)
-        await css.message.answer(f'💰 Ваш баланс : {balance_} \n\n 👥 Всего рефералов : {count_reffs[0]} \n\n 🔗 Ваша ссылка : https://t.me/OfficialKaifVpn_Bot?start={css.from_user.id} \n \n Чтобы вывести деньги, напишите @kaif_work')
-    except:
-        await css.message.answer(f'У вас еще нет бонусов за приведённого друга. Начните\n приглашать друзей и зарабатывайте! \n\n 🔗 Ваша ссылка :  https://t.me/OfficialKaifVpn_Bot?start={css.from_user.id}')
-
-
-
-
-@router.callback_query(F.data == ('howto'))
-async def hwtse(css: types.CallbackQuery):
-    await css.answer()
-    s = await get_user_stat(css.from_user.id)
-    if s == 0 or s == 555:
+            else:
+                
+                await msg.answer_photo(photo='https://i.yapx.ru/XG83F.png',caption='Выберите действие по кнопкам ниже', reply_markup=casses())
         
-        await css.message.answer('У вас нет подписки')
+        except:
+            pass
 
-    else:
+class cases(StatesGroup):
 
-        await css.message.answer('Гайдик', reply_markup=send_url())
+    cases_ = State()
+    price = State()
+    usersc = State()
+
+class adminadd(StatesGroup):
+    add_xdx = State()
+    
+    timex_ = State()
+
+class get_spam(StatesGroup):
+    spam_start = State()
+class del_admins(StatesGroup):
+    del_ads = State()
+
+class searches_(StatesGroup):
+    search_start = State()
 
 
-
-@router.callback_query(F.data.startswith('vpn'))
-async def vpn_state(css: types.CallbackQuery):
-    await css.answer()
+@dp.message_handler(text='Создать набор', state=None,)
+async def statex(msg: types.Message, state: FSMContext):
+    async with aiosqlite.connect('teg.db') as tc:
+        async with tc.execute('SELECT time_delete FROM users WHERE user_id = ?', (msg.from_user.id,)) as f:
+            s = await f.fetchone()
     try:
-        send_vpn = await get_user_vpn(css.from_user.id)
-        pay_days = await get_payments_days(css.from_user.id)
-        get_stat = await get_user_stat(css.from_user.id)
-        get_vpn = await get_user_vpn(css.from_user.id)
-        if get_stat == 1 and get_vpn == 0:   
-            try:
-                get_server = await set_client(userid=css.from_user.id,days=pay_days)
-                if get_server[1]:
-                    updated_text = re.sub(r'vless://.*?@', f'vless://{css.from_user.id}@', get_server[0])
-                    updated_text = re.sub(r'spx=[^&]+', f'spx=%2F#{css.from_user.id}', updated_text)
-                    await upt_user_vpn(userid=css.from_user.id,vpn=updated_text)
-                    await css.message.answer(f'Ваша ссылка : \n `{updated_text}` ', parse_mode='Markdown')
-            except Exception as e:
-                print(e)
-                await css.message.answer('Произошла ошибка свяжитесь с поддержкой')
-        elif get_vpn != 0:
-            await css.message.answer(text=f'Ваша ссылка : \n `{send_vpn}`', parse_mode='Markdown')
-        elif get_stat == 555:
-            await css.message.answer('Вы забанены')
+        if s[0] == '0' or s[0] is None:
+            await msg.answer('У вас нет подписки')
         else:
-            await css.message.answer('У вас нет подписки', reply_markup=oplata_infos())
+            await cases.cases_.set()
+        
+            await msg.answer('Выберите платформу либо введите её вручную', reply_markup=casses_())
+    except:
+        await state.finish()
+        
+        
+    
+
+
+
+@dp.message_handler(state=cases.cases_)
+async def state_(msg: types.Message, state: FSMContext):
+    try:
+        async with state.proxy() as data:
+            data['cases_'] = msg.text
+
+        await cases.next()
+    
+        await msg.answer('Введите оплату за отзыв')
+    except:
+        await state.finish()
+
+
+
+@dp.message_handler(state=cases.price)
+async def state__(msg: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        try:
+            data['price'] = msg.text
+            await cases.next()
+
+            await msg.answer('Введите описание к набору')
+    
+        
+        except:
+            await state.finish()
+            await msg.answer('Ошибка')
+
+    
+
+
+
+
+    
+   
+@dp.message_handler(state=cases.usersc)
+async def state_(msg: types.Message, state: FSMContext):
+    data = await state.get_data()
+    data['usersc'] = msg.text
+    try:
+        async with aiosqlite.connect('teg.db') as tc:
+            await tc.execute('UPDATE users SET cases_ = ?, price = ?, usersc = ?  WHERE user_id = ?', (data['cases_'],data['price'],data['usersc'], msg.from_user.id,))
+            await tc.commit()
+        
+            
+            await msg.answer('Набор создан!\nЧтобы отправить/закрыть перейдите в «Управление набором»', reply_markup=casses())
+            
+            await state.finish()
     except Exception as e:
         print(e)
-        await css.message.answer('Список VPN пуст пожалуйста обратитесь в поддержку')
+        await state.finish()
+        await msg.answer('Введите целое число')
+    
+    
+
+
+@dp.message_handler(text='Управление набором')
+async def check_cases(msg: types.Message):
 
 
 
-@dp.callback_query(F.data == ('prems'))
-async def guide(css: types.CallbackQuery):
-    await css.answer()
-    s = await get_user_stat(css.from_user.id)
-    if s == 0:
-        await css.message.answer(text=f'У вас еще нет подписки!', reply_markup=oplata_infos())
-        
+
+    
+    async with aiosqlite.connect('teg.db') as tc:
+        async with tc.execute('SELECT * FROM users WHERE user_id = ?',(msg.from_user.id,)) as f:
+            datas = await f.fetchone()
+        async with tc.execute('SELECT time_delete FROM users WHERE user_id = ?', (msg.from_user.id,)) as f_:
+            s = await f_.fetchone()
+    if s[0] == '0' or s[0] is None:
+        await msg.answer('У вас нет подписки')
     else:
-        datas_ = await get_user_date(userid=css.from_user.id)
-        await css.message.answer(text=f'Ваша подписка : {datas_}')
-
-
-
-@router.callback_query(F.data == ('infos'))
-async def s555666(css: types.CallbackQuery):
-    await css.answer()
-    await css.message.answer('🌐Выберите кол-во месяцев, на которое вы хотите приобрести\n KAIF VPN:',reply_markup=payment_key())
-
-
-
-@router.callback_query(F.data.startswith('payment_'))
-async def payments_____(css: types.CallbackQuery):
-    s = css.data.split('_')
-    await css.answer()
-    await css.message.delete()
-    r_url = await get_payments_url(css.from_user.id)
-    if r_url == 0:
-        if str(s[1]) == '150':
-            payms = await create_payment('150')
-            await css.message.answer(f'Ваша ссылка для оплаты \n {payms[1]}')
-            await upt_pay_infos(userid=css.from_user.id,status=payms[0],url=payms[1],days=30)
-        elif str(s[1]) == '400':
-            payms = await create_payment('400')
-            await css.message.answer(f'Ваша ссылка для оплаты \n {payms[1]}')
-            await upt_pay_infos(userid=css.from_user.id,status=payms[0],url=payms[1],days=90)
-        elif str(s[1]) == '750':
-            payms = await create_payment('750')
-            await css.message.answer(f'Ваша ссылка для оплаты \n {payms[1]}')
-            await upt_pay_infos(userid=css.from_user.id,status=payms[0],url=payms[1],days=180)
-        elif str(s[1]) == '1400':
-            payms = await create_payment('1400')
-            await css.message.answer(f'Ваша ссылка для оплаты \n {payms[1]}')
-            await upt_pay_infos(userid=css.from_user.id,status=payms[0],url=payms[1],days=360)
-    else:
-        await css.message.answer(f'У вас есть незаконченная оплата Хотите отменить? \n [Тык]({r_url})',parse_mode='Markdown', reply_markup=payment_cancel())
-
-
-
-@router.callback_query(F.data == ('paycancel'))
-async def payments______5555(css: types.CallbackQuery):
-    await css.answer()
-    await css.message.delete()
-    await upt_pay_infos(userid=css.from_user.id,status=0,url=0,days=0)
-    await css.message.answer('Отменено', reply_markup=payment_key())
-
-
-
-
-
-
-
-@router.callback_query(F.data.startswith('otmenit_'))
-async def ttttt(css: types.CallbackQuery):
-    await css.answer()
-    s = css.data.split('_')
-    await css.message.answer(text=f'Отменен {s[1]}')
-
-class addSer(StatesGroup):
-    nickname_ = State()
-    vpn_ = State()
-
-class spam_(StatesGroup):
-    spams = State()
-
-class unbans(StatesGroup):
-    nicknames_ = State()
-
-class perevods(StatesGroup):
-    infos_ = State()
-
-
-class servInfo(StatesGroup):
-    country_ = State()
-    log_ = State()
-    passw_ = State()
-    sip_ = State()
-    sinbound = State()
-
-class reff5(StatesGroup):
-    reff6 = State()
-
-
-@router.callback_query(StateFilter(None), F.data == ('reff0'))
-async def add_reff5(css: types.CallbackQuery, state: FSMContext):
-    if css.from_user.id == 1624519308 or css.from_user.id == 6203509782:
-        await css.answer()
-        await css.message.answer('Введите ID Пользователя', reply_markup=cancel_())
-        await state.set_state(reff5.reff6)
-
-
-@router.message(reff5.reff6)
-async def add_reff6(msg: types.Message, state: FSMContext): 
-    try:
-        await update_reff5(userid=int(msg.from_user.id))
-        await msg.answer('Готово')
-        await state.clear()
-    except:
-        await msg.answer(text='Чтото пошло не так')
-        await state.clear()
-
-@router.callback_query(StateFilter(None), F.data == ('add_server'))
-async def add_server(css: types.CallbackQuery, state: FSMContext):
-    if css.from_user.id == 1624519308 or css.from_user.id == 6203509782:
-        await css.answer()
-        await css.message.answer('Введите login от сервера', reply_markup=cancel_())
-        await state.set_state(servInfo.country_)
-
-
-
-
-@router.message(servInfo.country_)
-async def add_server_6(msg: types.Message, state: FSMContext): 
-    await state.update_data(country_=msg.text)
-    await msg.answer('Введите Пароль от сервера', reply_markup=cancel_())
-
-
-    await state.set_state(servInfo.log_)
-
-@router.message(servInfo.log_)
-async def vpn___(msg: types.Message, state: FSMContext):
-    await state.update_data(passw_=msg.text)
-    await msg.answer('Введите ссылку от VPN из панели', reply_markup=cancel_())
-    await state.set_state(servInfo.passw_)
-
-
-@router.message(servInfo.passw_)
-async def add_server_8(msg: types.Message, state: FSMContext):
-    await state.update_data(sip_=msg.text)
-    if 'vless' in msg.text:
-        await msg.answer('Введите IP PORT сервера пример 0.0.0.0:65000', reply_markup=cancel_())
-        await state.set_state(servInfo.sip_)
-    else:
-        await msg.answer('Вы неправильно ввели ссылку', reply_markup=cancel_())
-
-
-@router.message(servInfo.sip_)
-async def add_server_7(msg: types.Message, state: FSMContext):
-    await state.update_data(sinbound_=msg.text)
-    try:
-        if ':' in msg.text:
-            await msg.answer('Введите ID панели клиентов пример (от 1 - 9)', reply_markup=cancel_())
-            await state.set_state(servInfo.sinbound)
+        if datas[0] == '0':
+            await msg.answer('У вас еще нет наборов что бы открыть набор нажмитe Открыть набор', reply_markup=casses())
         else:
-            await msg.answer('Вы неправильно ввели ссылку', reply_markup=cancel_())
-    except Exception as e:
-        await state.clear()
-        await bot.send_message(chat_id=1624519308, text=str(e))
-        await msg.answer('Чтото пошло не так')
+            await msg.answer(f'*▸ Платформа: {datas[1]} \n▸ Получите оплату: {datas[2]}₽ \n▸ Описание: {datas[4]} \n \n★ Писать: @{msg.from_user.username}* \n☆ Наши выплаты: @SHARDopl', reply_markup=sendx(), parse_mode='Markdown')
 
-@router.message(servInfo.sinbound)
-async def add_server_555(msg: types.Message, state: FSMContext):
+
+@dp.message_handler(text='Назад')
+
+async def swelx_(msg: types.Message):
+        await msg.answer('🎉', reply_markup=wel())
+        await msg.delete()
+
+
+
+
+@dp.message_handler(text='Профиль')
+async def profile(msg: types.Message):
+        async with aiosqlite.connect('teg.db') as tc:
+            async with tc.execute('SELECT * FROM users WHERE user_id = ?',(msg.from_user.id,)) as f_:
+                x = await f_.fetchone()
+        try:
+            tie = datetime.datetime.strptime(x[7], '%Y-%m-%d %H:%M')
+            tir = datetime.datetime.strptime(x[8], '%Y-%m-%d %H:%M')
+            s = tir - datetime.datetime.now()
+            f = s.days
+            await msg.answer_photo(photo='https://i.yapx.ru/XG8zz.png',caption=f' Добро пожаловать!\nИнформация о вашем профиле:\n \n➖ ➖ ➖ ➖ ➖ \n ID: {x[0]} \n Ваш статус: администратор\n➖ ➖ ➖ ➖ ➖', parse_mode='Markdown')
+        except Exception as e:
+            print(e)
+            await msg.answer_photo(photo='https://i.yapx.ru/XG8zz.png',caption=f' Добро пожаловать!\nИнформация о вашем профиле:\n \n➖ ➖ ➖ ➖ ➖ \n ID: {x[0]} \n Ваш статус: исполнитель\n➖ ➖ ➖ ➖ ➖', parse_mode='Markdown')
+
+
+
+
+
+
+@dp.callback_query_handler(text_contains='starts')
+async def sendx_(css: types.CallbackQuery):
     try:
-        data = await state.get_data()
-        await insert_server_info(log=data['country_'], passw=data['passw_'],names=data['sip_'],sip=data['sinbound_'],sinbound=msg.text)
-        await msg.answer('Готово', reply_markup=admins_key())
-        await state.clear()
-    except Exception as e:
-        await state.clear()
-        await bot.send_message(chat_id=1624519308, text=str(e))
-        await msg.answer('Чтото пошло не так')
-
-
-
-@dp.message(Command('admin'))
-async def admins(msg: types.Message):
-    if msg.from_user.id == 1624519308 or msg.from_user.id == 6203509782:
-        async with aiosqlite.connect('tet.db') as tc:
-            await tc.execute('UPDATE users SET status = 1 WHERE user_id = ?', (msg.from_user.id,))
-            await tc.commit()
-        await msg.answer('Админка', reply_markup=admins_key())
-
-
-
-
-
-
-
-
-@router.callback_query(StateFilter(None), F.data.startswith('pay_'))
-async def add_5(css: types.CallbackQuery, state: FSMContext):
-    await css.answer()
-    s = await get_user_stat(css.from_user.id)
-    if s == 555:
-        await css.message.answer('Вы были забанены обратитесь в службу поддержки')
-    else:
-        
-        await css.message.answer('Напишите пожалуйста от кого перевод ?', reply_markup=cancel_())
-
-
-
-
-    
-    
-    await state.set_state(perevods.infos_)
-
-
-@router.message(perevods.infos_)
-async def add_6(msg: types.Message, state: FSMContext):
-    await bot.send_message(chat_id=-1002214194022,text=f'Пользователь `{msg.from_user.id}`, Оптлатил заказ \n \n от кого : {msg.text}', reply_markup=accept(userid=msg.from_user.id,rands='0',), parse_mode='Markdown')
-    await msg.answer('Спасибо подождите')
-    await state.clear()
-
-
-
-@router.callback_query(StateFilter(None), F.data == ('add_vpn'))
-async def add_uder(css: types.CallbackQuery, state: FSMContext):
-    if css.from_user.id == 1624519308 or css.from_user.id == 6203509782:
-        await css.answer()
-        
-        await css.message.answer('Введите ID из панели VPN', reply_markup=cancel_())
-
-        await state.set_state(addSer.nickname_)
-
-@router.message(addSer.nickname_)
-async def nickname___(msg: types.Message, state: FSMContext):
-    
-    await state.update_data(nickname_=msg.text)
-    await msg.answer('Введите ссылку от впн', reply_markup=cancel_())
-
-
-    await state.set_state(addSer.vpn_)
-
-@router.message(addSer.vpn_)
-async def vpn___(msg: types.Message, state: FSMContext):
-    try:
-        data = await state.get_data()
-        if 'vless' in msg.text:
-            await insert_vpn(url=msg.text,names=str(data['nickname_']))
-            await msg.answer('Готово', reply_markup=admins_key())
-            await state.clear()
-        else:
-            await msg.answer('Вы неправильно ввели ссылку', reply_markup=cancel_())
-    except Exception as e:
-        await state.clear()
-        await bot.send_message(chat_id=1624519308, text=e)
-        await msg.answer('Чтото пошло не так')
-
-@router.callback_query(F.data.startswith ('ban_'))
-async def states_5(css: types.CallbackQuery):
-    s = css.data.split('_')
-    await css.answer()
-    await upt_user_ban(userid=int(s[1]))
-    await css.message.answer(text=f'Пользователь - {s[1]} забанен')
-
-
-
-@router.callback_query(StateFilter(None), F.data == ('unban'))
-async def sends_5(css: types.CallbackQuery, state: FSMContext):
-    await css.answer()
-        
-    await css.message.answer('Введите ID :', reply_markup=cancel_())
-
-    await state.set_state(unbans.nicknames_)
-
-
-
-@router.message(unbans.nicknames_)
-async def nickname___5(msg: types.Message, state: FSMContext):
-    try:
-        await upt_user_unban(userid=int(msg.text))
-        await msg.answer('Готово')
-        await state.clear()
-    except Exception as e:
-        print(e)
-        await state.clear()
-
-
-@router.callback_query(StateFilter(None), F.data == ('sender'))
-async def sends(css: types.CallbackQuery, state: FSMContext):
-    if css.from_user.id == 1624519308 or css.from_user.id == 6203509782:
-        await css.answer()
-        
-        await css.message.answer('Введите текст рассылки', reply_markup=cancel_())
-
-        await state.set_state(spam_.spams)
-
-
-
-@router.message(spam_.spams)
-async def nickname___(msg: types.Message, state: FSMContext):
-    try:
-        async with aiosqlite.connect('tet.db') as tc:
-            async with tc.execute('SELECT user_id FROM users') as f:
-                s = await f.fetchall()
-        for i in s:
-            try:
-                await bot.send_message(chat_id=i[0],text=msg.text)
-            except:
+        row = InlineKeyboardMarkup()
+        rows = InlineKeyboardButton(text='Откликнуться', url=f'https://t.me/{css.from_user.username}') 
+        if css.data == 'starts_':
+            async with aiosqlite.connect('teg.db') as tc:
+                async with tc.execute('SELECT * FROM users WHERE user_id = ?',(css.from_user.id,)) as f:
+                    datas = await f.fetchone()
+            async with aiosqlite.connect('teg.db') as tc:
+                async with tc.execute('SELECT time_delete FROM users WHERE user_id = ?', (css.from_user.id,)) as f_:
+                    s_ = await f_.fetchone()
+            row.add(rows)
+            if s_[0] == '0' or s_[0] is None:
                 pass
-        await msg.answer('Рассылено')
-        await state.clear()
+            else:
+                s = await bot.send_message(chat_id=-1001892774322, text=f' *▸ Платформа: {datas[1]} \n▸ Получите оплату: {datas[2]}₽ \n▸ Описание: {datas[4]} \n \n \n★ Писать: @{css.from_user.username}* \n☆ Наши выплаты: @SHARDopl', parse_mode='Markdown', reply_markup=row)
+            
+            #s_ = await bot.send_message(chat_id='@fludilkaotzivnichka', text=f' 📈 {datas[1]}\n 👩‍🔧 Нужно людей - {datas[4]} \n 💴 Оплата - {datas[2]} \n 🏷 Описание : {datas[3]} \n ✉️ Писать - @{css.from_user.username}')
+            
+            unix_time = datetime.datetime.now() + datetime.timedelta(minutes=30)
+            unix_time5 = int(unix_time.timestamp())
 
+
+            async with aiosqlite.connect('teg.db') as tc:
+                await tc.execute('UPDATE iff SET sends = ?, sends_ = ? WHERE user_id = ?', (s.message_id,unix_time5, css.from_user.id,))
+                await tc.commit()
+            await css.answer('Ваш набор открылся ☑️', show_alert=True)
+        elif css.data == 'starts%':
+            async with aiosqlite.connect('teg.db') as tc:
+                async with tc.execute('SELECT * FROM iff WHERE user_id = ?', (css.from_user.id,)) as f_:
+                    sends = await f_.fetchall()
+            for i in sends:
+                await bot.edit_message_text(text=f' 🔒 *Данное задание закончилось.*\n *Дождитесь нового, чтобы приступить к работе* \n \n ',chat_id=-1001892774322, message_id=i[1], parse_mode='Markdown',disable_web_page_preview=True, reply_markup=urlsr_())
+                #await bot.delete_message(chat_id='@fludilkaotzivnichka', message_id=i[2])
+            async with aiosqlite.connect('teg.db') as tc:
+                await tc.execute('UPDATE users SET cases_ = ?, price = ?, zametka = ?, usersc = ? WHERE user_id = ?',(None, None, None, None, css.from_user.id,))
+                await tc.commit()
+            await css.answer('Удалено')
+                #await bot.send_message(chat_id=-1001791109996, text=f'🔒 Набор от @{css.from_user.username} Был закрыт!')
+        elif css.data == 'starts-':
+            await bot.send_message(css.from_user.id, text='Главное Меню', reply_markup=wel())
     except Exception as e:
         print(e)
-        await state.clear()
-        await msg.answer('Чтото пошло не так')
+        pass
 
 
 
-@router.callback_query(StateFilter('*'), F.data == ('cansel'))
-async def canels(css: types.CallbackQuery, state: FSMContext):
-        await css.answer()
-        await state.clear() 
-        await css.message.answer('Отмена', reply_markup=starts_())
-
-
-@router.callback_query(F.data == ('nazad'))
-async def s555(css: types.CallbackQuery):
-    await css.answer()
-    await css.message.answer('Назад', reply_markup=starts_())
 
 
 
-@router.callback_query(F.data == ('delete_server'))
-async def funcs5(css: types.CallbackQuery):
-    await css.answer()
-    s = await get_server_info()
+@dp.message_handler(text='Связь с администрацией')
+async def sends_____(msg: types.Message):
+    await msg.answer_photo(photo='https://i.yapx.ru/XG80r.png',caption=' Если требуется помощь, можете обратиться к администрации\nканала по следующим контактам:\n \n➖ ➖ ➖ ➖ ➖\n Owner: @elijist \n Support: @fillmaan\n➖ ➖ ➖ ➖ ➖', parse_mode='Markdown')
+
+
+
+
+
+@dp.message_handler(commands=['admin'])
+async def ads_(msg: types.Message):
+    if msg.from_user.id == 686674950 or msg.from_user.id == 5954314568:
+        await msg.answer('Вы админ', reply_markup=ads_55())
     
-    key = servers_key(s)
-    await css.message.answer('Просто нажми на сервер что бы удалить', reply_markup=key)
+    
+    
+    
+    
+    else:
+        await msg.answer('Отказано')
 
-@router.callback_query(F.data.startswith ('removeserver_'))
-async def funcs6(css: types.CallbackQuery):
+
+
+
+      
+@dp.message_handler(text='Поиск Пользователя по нику', state=None)
+async def search_(msg: types.Message, state: FSMContext):
+    try:
+        row = ReplyKeyboardMarkup(resize_keyboard=True)
+        s = KeyboardButton(text='Отмена')
+        row.add(s)
+        if msg.from_user.id == 686674950 or msg.from_user.id == 5954314568:
+            await msg.answer('Введите ник Пользователя без @', reply_markup=row)
+            await searches_.search_start.set()
+    except Exception as e:
+        pass
+
+@dp.message_handler(state=searches_.search_start)
+async def state_search(msg: types.Message, state: FSMContext):
+    try:
+        row = InlineKeyboardMarkup()
+        if msg.text == 'Отмена':
+            await msg.answer('Отменено!', reply_markup=ads_55())
+            await state.finish()
+        else:
+            async with aiosqlite.connect('teg.db') as tc:
+                async with tc.execute('SELECT username FROM users WHERE username = ?', (msg.text,)) as t:
+                    x = await t.fetchone()
+                async with tc.execute('SELECT * from users WHERE username = ?', (x[0],)) as t_:
+                    s = await t_.fetchone()
+            rows = InlineKeyboardButton(text='Добавить админа', callback_data=f'admins_{s[0]}')
+            rows_ = InlineKeyboardButton(text='удалить из админов', callback_data=f'remove_{s[0]}')
+            row.add(rows, rows_)
+            await msg.answer(f'ID : {s[0]}\n nickname : @{s[5]} \n firstname: {s[6]} \n Время : {s[7]} \n Осталось: {s[8]}', reply_markup=row)
+            await msg.answer('Главное меню', reply_markup=ads_55())
+            await state.finish()
+    except Exception as e:
+        await msg.answer('Такого нет')
+        await state.finish()
+        print(e)
+
+
+
+
+@dp.message_handler(text='Список Админов')
+async def admins_(msg: types.Message):
+    try:
+        row = InlineKeyboardMarkup()
+        if msg.from_user.id == 686674950 or msg.from_user.id == 5954314568:
+            
+            async with aiosqlite.connect('teg.db') as tc:
+                async with tc.execute('SELECT * FROM users') as t:
+                    x = await t.fetchall()
+            for s in x:
+                rows = InlineKeyboardButton(text=f'@{s[5]} - {s[8]}', callback_data=f'add_@{s[0]}')
+                    
+                    
+                row.add(rows)
+            await msg.answer('Список админов', reply_markup=row)
+        else:
+            pass
+    except:
+        pass
+
+
+
+@dp.message_handler(text='Начать рассылку', state=None)
+async def spam_strsx(msg: types.Message, state: FSMContext):
+
+    if msg.from_user.id == 686674950 or msg.from_user.id == 5954314568:
+        x = ReplyKeyboardMarkup(resize_keyboard=True)
+        x_0 = KeyboardButton(text='Отмена')
+        x.add(x_0)
+        await msg.answer('Начинаем рассылку введите текст рассылки', reply_markup=x)
+        await get_spam.spam_start.set()
+
+
+
+@dp.message_handler(state=get_spam.spam_start)
+async def stam_it(msg: types.Message, state: FSMContext):
+    try:
+        if msg.text == 'Отмена':
+            await msg.answer('Отменено', reply_markup=ads_55())
+            await state.finish()
+        else:
+            async with aiosqlite.connect('teg.db') as tc:
+                async with tc.execute('SELECT user_id FROM users') as t:
+                    s = await t.fetchall()
+            for sends in s:
+                try:
+                    await bot.send_message(chat_id=sends[0], text=msg.text)
+                except Exception as e:
+                    print(e)
+            await msg.answer('Рассылено', reply_markup=ads_55())
+            await state.finish()
+    except Exception as e:
+        print(e)
+
+
+
+@dp.callback_query_handler(text_contains='add_@')
+async def add_ads_(css: types.CallbackQuery):
+
+    
+    rowsr = InlineKeyboardMarkup()
+    rows_s = InlineKeyboardButton(text='Отмена', callback_data='otmena')
+    try: 
+        async with aiosqlite.connect('teg.db') as tc:
+            async with tc.execute('SELECT * FROM users WHERE user_id = ?', (int(css.data[5:]),)) as t:
+                v = await t.fetchall()
+        for s in v:
+            rows = InlineKeyboardButton(text='Добавить в админы', callback_data=f'admins_{s[0]}')
+            rows_ = InlineKeyboardButton(text='Удалить из админов', callback_data=f'remove_{s[0]}')
+            rowsr.add(rows,rows_).add(rows_s)
+            await css.message.answer(f'ID : {s[0]}\n User: @{s[5]} \n Время : {s[7]} \n Осталось: {s[8]}', reply_markup=rowsr)
+    
+    
+    
+    
+    except:
+        pass
+
+
+
+
+
+
+
+
+
+@dp.callback_query_handler(text='otmena')
+async def adsadsa(css: types.CallbackQuery):
+    
+    await css.message.delete()
+
+
+
+
+
+@dp.callback_query_handler(text_contains='admins_', state=None)
+async def state_ads_(css: types.CallbackQuery, state: FSMContext):
+    
+    try:
+        async with state.proxy() as data:
+            data['add_xdx'] = int(css.data[7:])
+    
+    
+    
+    
+        s = InlineKeyboardMarkup()
+        s_ = InlineKeyboardButton(text='Отмена', callback_data='stop')
+        s.add(s_)
+        await css.message.answer('Напишите время админки (Дни)', reply_markup=s) 
+
+
+    
+        await adminadd.add_xdx.set()
+    except:
+
+        await css.message.answer('Введите число или отмена')
+
+
+
+
+
+
+
+@dp.message_handler(state=adminadd.add_xdx)
+async def state_ads______(msg: types.Message, state: FSMContext):
+    
+    
+    
+    try:
+        time_now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+
+        time_delete = (datetime.datetime.now() + datetime.timedelta(days=int(msg.text))).strftime('%Y-%m-%d %H:%M')
+        
+        async with state.proxy() as data:
+            async with aiosqlite.connect('teg.db') as tc:
+                async with tc.execute('SELECT * FROM users WHERE user_id = ?', (data['add_xdx'],)) as t:
+                    s = await t.fetchall()
+            for i in s:
+                async with aiosqlite.connect('teg.db') as tc:
+                    await tc.execute('UPDATE rat SET username = ?, username_admin = ?, time_now = ?, time_delete = ? WHERE user_id = ?', (i[5], msg.from_user.username,time_now, time_delete, data['add_xdx'],))
+                    
+                    await tc.execute('UPDATE users SET time_now = ?, time_delete = ? WHERE user_id = ?', (time_now, time_delete, data['add_xdx'],))
+                    
+                    await tc.commit()
+                
+                await msg.answer('Добавлено!')
+                await state.finish()
+            async with aiosqlite.connect('teg.db') as tc:
+                async with tc.execute('SELECT username FROM users WHERE user_id = ?', (data['add_xdx'],)) as t:
+                    srs = await t.fetchone()
+            await bot.send_message(chat_id=686674950, text=f'@{msg.from_user.username} Добавил - @{srs[0]} На {msg.text} Дней')
+            await bot.send_photo(photo='https://i.yapx.ru/XG87c.png',caption='Вам выдали админку!',chat_id=data['add_xdx'])
+    
+    except Exception as e:
+        print(e)
+        await state.finish()
+        await msg.answer('Введите число')
+
+
+
+@dp.callback_query_handler(state=adminadd.add_xdx)
+async def state_adsrs(css: types.CallbackQuery, state: FSMContext):
+    if css.data == 'stop':
+        await state.finish()
+        await css.message.answer('Отменено', reply_markup=ads_55())
+
+
+
+
+@dp.callback_query_handler(text_contains='remove_')
+async def remove_it(css: types.CallbackQuery):
     s = css.data.split('_')
-    await css.answer()
     try:
-        await delete_servers(sip=s[1])
-        s = await get_server_info()
+        async with aiosqlite.connect('teg.db') as tc:
+            async with tc.execute('SELECT username FROM users WHERE user_id = ? ', (int(s[1]),)) as t:
+                srs = await t.fetchone()
+        await bot.send_message(chat_id=686674950, text=f'@{css.from_user.username} Удалил @{srs[0]} Из админов')
+        async with aiosqlite.connect('teg.db') as tc:
+                await tc.execute('DELETE FROM users WHERE user_id = ?', (int(s[1]),))
+                await tc.commit()
+        try:
+            await bot.send_message(chat_id=int(s[1]), text='Ваша подписка закончилась /start перезапустите бота')
+        except Exception as e:
+            print(e)
     
-        key = servers_key(s)
-        await css.message.answer('Просто нажми на сервер что бы удалить', reply_markup=key)
+
+        await css.message.answer('Удален')
+        
     except Exception as e:
         print(e)
-
-
-@router.callback_query(F.data == ('backup'))
-async def funcs7(css: types.CallbackQuery):
-    await css.answer()
-    s = InputFile('tet.db')
-    r = InputFile('teg.db')
-    await bot.send_document(chat_id=css.from_user.id,document=s)
-    await bot.send_document(chat_id=css.from_user.id,document=r)
-
-async def main():
-    await datas()
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+        await css.message.answer('Чтото пошло не так')
 
 
 
 
 
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())  
-    except Exception as e:
-        print(e)
+
+
+
+
+
+
+
+
+
+
+
+if __name__ == '__main__':
+    s = asyncio.get_event_loop()
+    s.run_until_complete(state_tttttt())
+   
+    executor.start_polling(dp, skip_updates=True)
