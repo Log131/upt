@@ -228,7 +228,7 @@ async def sendx_(css: types.CallbackQuery):
                 async with tc.execute('SELECT * FROM iff WHERE user_id = ?', (css.from_user.id,)) as f_:
                     sends = await f_.fetchall()
             for i in sends:
-                await bot.edit_message_text(text=f' 🔒 *Данное задание закончилось.*\n *Дождитесь нового, чтобы приступить к работе* \n \n ',chat_id=-1001892774322, message_id=i[1], parse_mode='Markdown',disable_web_page_preview=True, reply_markup=urlsr_())
+                await bot.edit_message_text(text=f' 🔒 *Данное задание закончилось.*\n *Дождитесь нового, чтобы приступить к работе* \n \n Нажмите на кнопку «Как начать работу?», чтобы ознакомиться\n с бесплатным обучением заработку',chat_id=-1001892774322, message_id=i[1], parse_mode='Markdown',disable_web_page_preview=True, reply_markup=urlsr_())
                 #await bot.delete_message(chat_id='@fludilkaotzivnichka', message_id=i[2])
             async with aiosqlite.connect('teg.db') as tc:
                 await tc.execute('UPDATE users SET cases_ = ?, price = ?, zametka = ?, usersc = ? WHERE user_id = ?',(None, None, None, None, css.from_user.id,))

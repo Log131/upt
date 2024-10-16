@@ -71,9 +71,13 @@ async def update_msg():
             s = await f.fetchall()
         try:
             for i in s:
-                unixtime = datetime.datetime.fromtimestamp(i[1])
-                if datetime.datetime.now() >= unixtime:
-                    await bot.edit_message_text(text=f' 🔒 *Данное задание закончилось.*\n *Дождитесь нового, чтобы приступить к работе* \n \n ',chat_id=-1001892774322, message_id=i[0], parse_mode='Markdown',disable_web_page_preview=True, reply_markup=urlsr_())
+                try:
+                    if i[1]:
+                        unixtime = datetime.datetime.fromtimestamp(i[1])
+                        if datetime.datetime.now() >= unixtime:
+                            await bot.edit_message_text(text=f' 🔒 *Данное задание закончилось.*\n *Дождитесь нового, чтобы приступить к работе* \n \n Нажмите на кнопку «Как начать работу?», чтобы ознакомиться\n с бесплатным обучением заработку',chat_id=-1001892774322, message_id=i[0], parse_mode='Markdown',disable_web_page_preview=True, reply_markup=urlsr_())
+                except Exception as e:
+                    print(e)
         except Exception as e:
             print(e)
 
